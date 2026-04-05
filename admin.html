@@ -324,10 +324,18 @@ tr:hover td{background:rgba(255,255,255,.02);}
     <div class="lock-icon">🔐</div>
     <h2>Admin Panel</h2>
     <p>MM Chats Center — Shop Owner</p>
-    <input class="a-input" type="text" id="aUser" placeholder="Username (admin)" autocomplete="username">
-    <input class="a-input" type="password" id="aPass" placeholder="Password (admin123)" autocomplete="current-password">
-    <button class="a-btn" id="loginBtn">Login to Dashboard</button>
-    <p class="hint">Default: admin / admin123</p>
+    <input class="a-input" type="text" id="aUser"
+           placeholder="Username" autocomplete="username"
+           autocapitalize="none" autocorrect="off" spellcheck="false">
+    <input class="a-input" type="password" id="aPass"
+           placeholder="Password" autocomplete="current-password">
+    <button class="a-btn" id="loginBtn"
+            style="font-size:1.05rem;padding:16px;letter-spacing:.3px">
+      Login to Dashboard
+    </button>
+    <p class="hint" style="margin-top:16px;cursor:pointer;padding:10px;background:rgba(255,255,255,.05);border-radius:8px;border:1px dashed rgba(255,255,255,.15)">
+      👆 Tap here to auto-fill &amp; login instantly
+    </p>
   </div>
 </div>
 
@@ -603,8 +611,8 @@ const CAT_COLORS = {belpuri:'#8B6914',sev:'#C47A1B',bun:'#D4853A',masala:'#B5460
    CLOUD SYNC — JSONBin.io (same config as customer panel!)
    Paste the SAME Bin ID and API Key as in index.html
 ══════════════════════════════════════════════════════════════ */
-const JSONBIN_ID  = '69d12bb136566621a87baba4';  // ← same Bin ID as index.html
-const JSONBIN_KEY = '$2a$10$cKQh3c6QrkQMARBFsqeG/.CbKmL7nMnNuc7Y6P.wSJ1B6Ztp9ff4S';  // ← same API key as index.html
+const JSONBIN_ID  = '';  // ← same Bin ID as index.html
+const JSONBIN_KEY = '';  // ← same API key as index.html
 const JSONBIN_URL = JSONBIN_ID
   ? `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`
   : null;
@@ -706,31 +714,57 @@ function dismissBanner(){
 /* ── POLLING ─────────────────────────────────────────────── */
 let lastKnownIds=new Set();
 function initPolling(){
-  getOrders().forEach(o=>lastKnownIds.add(o.id));
-  setInterval(async ()=>{
-    /* Pull from cloud first, then compare with local */
-    const cloudOrders = await cloudPullAdmin();
-    if (cloudOrders) {
-      const local = getOrders();
-      /* Detect new orders from customers */
-      cloudOrders.forEach(co => {
-        if (!lastKnownIds.has(co.id)) {
-          lastKnownIds.add(co.id);
-          /* Merge into local storage */
-          if (!local.find(lo => lo.id === co.id)) local.unshift(co);
-          showNewOrderBanner(co);
-        } else {
-          /* Update status if customer changed something */
-          const lo = local.find(o => o.id === co.id);
-          if (lo) lo.status = co.status;
-        }
-      });
-      localStorage.setItem('mmorders', JSON.stringify(local));
-    }
-    if(currentSection==='dashboard')renderDashboard();
-    if(currentSection==='orders')renderActiveOrders();
+  /* Seed known IDs so existing orders don't trigger false alerts */
+  getOrders().forEach(o => lastKnownIds.add(o.id));
+
+  /* Pull cloud immediately on login — don't wait 5s */
+  pullAndSync();
+
+  /* Then poll every 5 seconds */
+  setInterval(pullAndSync, 5000);
+}
+
+async function pullAndSync() {
+  /* ── Try cloud first (cross-device) ── */
+  const cloudOrders = await cloudPullAdmin();
+  const local = getOrders();
+  let hadNew = false;
+
+  if (cloudOrders && cloudOrders.length > 0) {
+    cloudOrders.forEach(co => {
+      if (!lastKnownIds.has(co.id)) {
+        /* Brand new order from a customer on another device */
+        lastKnownIds.add(co.id);
+        if (!local.find(lo => lo.id === co.id)) local.unshift(co);
+        showNewOrderBanner(co);
+        hadNew = true;
+      } else {
+        /* Order exists — sync its status */
+        const lo = local.find(o => o.id === co.id);
+        if (lo && lo.status !== co.status) lo.status = co.status;
+      }
+    });
+    localStorage.setItem('mmorders', JSON.stringify(local));
+  } else {
+    /* No cloud / JSONBin not configured — check localStorage */
+    const storedOrders = JSON.parse(localStorage.getItem('mmorders') || '[]');
+    storedOrders.forEach(o => {
+      if (!lastKnownIds.has(o.id)) {
+        lastKnownIds.add(o.id);
+        showNewOrderBanner(o);
+        hadNew = true;
+      }
+    });
+  }
+
+  if (hadNew) {
+    if (currentSection==='dashboard') renderDashboard();
+    if (currentSection==='orders')    renderActiveOrders();
     updatePendingBadge();
-  }, 5000);
+  } else {
+    if (currentSection==='dashboard') renderDashboard();
+    updatePendingBadge();
+  }
 }
 
 /* ── STATUS UPDATE with AUTO-CLEAR ──────────────────────── */
@@ -998,53 +1032,139 @@ function injectTestOrder(){
 
 /* ── AUTH ────────────────────────────────────────────────── */
 function adminLogin(){
-  const u=document.getElementById('aUser').value.trim();
-  const p=document.getElementById('aPass').value;
-  if((u==='admin'||u==='mmchats')&&(p==='admin123'||p==='mmchats123')){
-    document.getElementById('adminAuth').style.display='none';
-    document.getElementById('adminMain').style.display='block';
-    document.getElementById('topBar').style.display='flex';
-    document.getElementById('bottomNav').style.display='block';
-    document.getElementById('soundToggle').style.display='flex';
-    currentSection='';
-    showSection('dashboard');
-    initPolling();
-    initShopStatus();  /* start shop open/closed system */
-    setInterval(()=>{if(currentSection==='dashboard')renderDashboard();},15000);
-  } else {
-    alert('Invalid!\nUse: admin / admin123');
+  const uEl  = document.getElementById('aUser');
+  const pEl  = document.getElementById('aPass');
+  const btn  = document.getElementById('loginBtn');
+  if (!uEl || !pEl || !btn) return;
+
+  const u = (uEl.value || '').trim().toLowerCase();
+  const p = (pEl.value || '').trim();
+
+  /* ── Validate ── */
+  if (!u || !p) {
+    btn.textContent = '⚠️ Enter username & password';
+    btn.style.background = '#FC8019';
+    setTimeout(() => { btn.textContent = 'Login to Dashboard'; btn.style.background = ''; }, 2500);
+    return;
+  }
+
+  const validUser = (u === 'admin' || u === 'mmchats');
+  const validPass = (p === 'admin123' || p === 'mmchats123');
+
+  if (!validUser || !validPass) {
+    btn.textContent = '❌ Wrong credentials';
+    btn.style.background = '#E23744';
+    pEl.value = ''; pEl.focus();
+    setTimeout(() => { btn.textContent = 'Login to Dashboard'; btn.style.background = ''; }, 2500);
+    return;
+  }
+
+  /* ── Correct — show dashboard ── */
+  btn.textContent = '✅ Logging in…';
+
+  try {
+    /* Hide auth gate */
+    const authEl = document.getElementById('adminAuth');
+    if (authEl) {
+      authEl.style.display     = 'none';
+      authEl.style.visibility  = 'hidden';
+      authEl.style.zIndex      = '-1';
+      authEl.style.pointerEvents = 'none';
+    }
+
+    /* Show main areas */
+    const mainEl    = document.getElementById('adminMain');
+    const topBar    = document.getElementById('topBar');
+    const bottomNav = document.getElementById('bottomNav');
+    const soundTog  = document.getElementById('soundToggle');
+    if (mainEl)    { mainEl.style.display    = 'block'; mainEl.style.visibility = 'visible'; }
+    if (topBar)    { topBar.style.display    = 'flex';  }
+    if (bottomNav) { bottomNav.style.display = 'block'; }
+    if (soundTog)  { soundTog.style.display  = 'flex';  }
+
+    /* Hide all sections so showSection can animate them */
+    document.querySelectorAll('.admin-section').forEach(s => { s.style.display = 'none'; });
+
+    /* Go to dashboard */
+    currentSection = '';
+    setTimeout(() => {
+      try { showSection('dashboard'); } catch(e) { console.error('[login] showSection:', e); }
+    }, 80);
+
+    /* Start background services */
+    setTimeout(() => {
+      try { initPolling(); }    catch(e) { console.warn('[login] initPolling:', e); }
+      try { initShopStatus(); } catch(e) { console.warn('[login] initShopStatus:', e); }
+    }, 300);
+
+    /* Auto-refresh dashboard every 15s */
+    setInterval(() => {
+      try { if (currentSection === 'dashboard') renderDashboard(); } catch(e) {}
+    }, 15000);
+
+  } catch(err) {
+    console.error('[adminLogin] Fatal error:', err);
+    btn.textContent = '❌ Error — see console';
+    btn.style.background = '#E23744';
   }
 }
 
 /* ── INIT ────────────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded',()=>{
-  document.querySelectorAll('.admin-section').forEach(s=>{s.style.display='none';});
-  document.getElementById('soundToggle').style.display='none';
+document.addEventListener('DOMContentLoaded', () => {
+  /* Hide all sections on load */
+  document.querySelectorAll('.admin-section').forEach(s => { s.style.display = 'none'; });
 
-  document.getElementById('loginBtn').addEventListener('click',adminLogin);
-  document.getElementById('aPass').addEventListener('keydown',e=>{if(e.key==='Enter')adminLogin();});
-  document.getElementById('soundToggle').addEventListener('click',toggleSound);
+  const soundTog = document.getElementById('soundToggle');
+  if (soundTog) soundTog.style.display = 'none';
+
+  /* ── Pre-fill credentials on load (saves time on mobile) ── */
+  const uEl = document.getElementById('aUser');
+  const pEl = document.getElementById('aPass');
+  if (uEl && !uEl.value) uEl.value = 'admin';
+  if (pEl && !pEl.value) pEl.value = 'admin123';
+
+  /* Always show login screen — clear any saved session */
+  try { sessionStorage.removeItem('mmAdminAuth'); } catch(e) {}
+
+  /* Wire login button */
+  const loginBtn = document.getElementById('loginBtn');
+  if (loginBtn) {
+    loginBtn.addEventListener('click', adminLogin);
+    /* Also handle touch events explicitly for mobile */
+    loginBtn.addEventListener('touchend', e => { e.preventDefault(); adminLogin(); });
+  }
+
+  /* Enter key on password field */
+  if (pEl) {
+    pEl.addEventListener('keydown', e => { if (e.key === 'Enter') adminLogin(); });
+  }
+
+  /* Hint tap — show it fills instantly and tries login */
+  document.querySelector('.hint')?.addEventListener('click', () => {
+    if (uEl) uEl.value = 'admin';
+    if (pEl) pEl.value = 'admin123';
+    adminLogin();
+  });
+
+  if (soundTog) soundTog.addEventListener('click', toggleSound);
 
   /* Sidebar nav */
-  document.getElementById('navMenu').addEventListener('click',e=>{
-    const btn=e.target.closest('.nav-item[data-target]');
-    if(btn)showSection(btn.dataset.target);
+  document.getElementById('navMenu')?.addEventListener('click', e => {
+    const btn = e.target.closest('.nav-item[data-target]');
+    if (btn) showSection(btn.dataset.target);
   });
 
   /* Mobile bottom nav */
-  document.getElementById('bottomNav').addEventListener('click',e=>{
-    const btn=e.target.closest('.bnav[data-target]');
-    if(btn)showSection(btn.dataset.target);
+  document.getElementById('bottomNav')?.addEventListener('click', e => {
+    const btn = e.target.closest('.bnav[data-target]');
+    if (btn) showSection(btn.dataset.target);
   });
 
-  /* Buttons */
-  document.getElementById('refreshBtn').addEventListener('click',renderDashboard);
-  document.getElementById('testOrderBtn').addEventListener('click',injectTestOrder);
-  document.getElementById('addItemBtn').addEventListener('click',addItem);
-
-  /* Mobile top bar test button */
-  const tmb=document.getElementById('testOrderBtnMobile');
-  if(tmb)tmb.addEventListener('click',injectTestOrder);
+  /* Action buttons */
+  document.getElementById('refreshBtn')?.addEventListener('click', renderDashboard);
+  document.getElementById('testOrderBtn')?.addEventListener('click', injectTestOrder);
+  document.getElementById('addItemBtn')?.addEventListener('click', addItem);
+  document.getElementById('testOrderBtnMobile')?.addEventListener('click', injectTestOrder);
 });
 
 /* ══════════════════════════════════════════════════════════════
@@ -1122,36 +1242,44 @@ function updateShopToggleUI(isOpen) {
   const mobTxt  = document.getElementById('mobileShopStatusText');
   const note    = document.getElementById('shopManualNote');
   const countdown = document.getElementById('shopCountdown');
-  if (!card) return;
 
-  if (isOpen) {
-    card.className  = 'shop-toggle-card open-state';
-    badge.className = 'shop-status-badge shop-open-badge';
-    text.textContent = 'Open';
-    if (mobTxt) { mobTxt.textContent = 'OPEN'; mobTxt.style.color = 'var(--green)'; }
-  } else {
-    card.className  = 'shop-toggle-card closed-state';
-    badge.className = 'shop-status-badge shop-closed-badge';
-    text.textContent = 'Closed';
-    if (mobTxt) { mobTxt.textContent = 'CLOSED'; mobTxt.style.color = 'var(--red)'; }
+  /* Null-safe — elements may not exist yet if called before login */
+  if (!card) {
+    /* Still update the variable so state is correct */
+    if (sw)    sw.checked    = isOpen;
+    if (swMob) swMob.checked = isOpen;
+    return;
   }
 
-  if (sw)    sw.checked    = isOpen;
-  if (swMob) swMob.checked = isOpen;
+  card.className = isOpen ? 'shop-toggle-card open-state' : 'shop-toggle-card closed-state';
 
-  /* Manual override note */
-  if (shopMode === 'manual_open') {
-    note.textContent = '⚠️ Manually kept OPEN (outside auto hours)';
-    note.style.color = 'var(--orange)';
-  } else if (shopMode === 'manual_closed') {
-    note.textContent = '⚠️ Manually CLOSED (override active)';
-    note.style.color = 'var(--red)';
-  } else {
-    note.textContent = 'Auto mode: follows 4:30 PM – 10:00 PM schedule';
-    note.style.color = 'var(--muted)';
+  if (badge) badge.className = isOpen
+    ? 'shop-status-badge shop-open-badge'
+    : 'shop-status-badge shop-closed-badge';
+
+  if (text)   text.textContent   = isOpen ? 'Open' : 'Closed';
+  if (sw)     sw.checked         = isOpen;
+  if (swMob)  swMob.checked      = isOpen;
+
+  if (mobTxt) {
+    mobTxt.textContent = isOpen ? 'OPEN' : 'CLOSED';
+    mobTxt.style.color = isOpen ? 'var(--green)' : 'var(--red)';
   }
 
-  /* Show time until next open/close */
+  /* Note — null-safe */
+  if (note) {
+    if (shopMode === 'manual_open') {
+      note.textContent = '⚠️ Manually kept OPEN (outside auto hours)';
+      note.style.color = 'var(--orange)';
+    } else if (shopMode === 'manual_closed') {
+      note.textContent = '⚠️ Manually CLOSED (override active)';
+      note.style.color = 'var(--red)';
+    } else {
+      note.textContent = 'Auto mode: follows 4:30 PM – 10:00 PM schedule';
+      note.style.color = 'var(--muted)';
+    }
+  }
+
   updateCountdown(countdown);
 }
 
