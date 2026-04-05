@@ -1,45 +1,87 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>MM Chats</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 350px;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        h2 {
+            margin-bottom: 25px;
+            color: #666;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .customer {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .owner {
+            background: #ff5722;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        a {
+            text-decoration: none;
+        }
+    </style>
 </head>
+
 <body>
 
-    <h1>Welcome to MM Chats</h1>
+    <div class="container">
+        <h1>💬 MM Chats</h1>
+        <h2>Select Your Panel</h2>
 
-    <h2>Select Your Panel:</h2>
+        <a href="MMChats_Customer.html">
+            <button class="btn customer">Customer Panel</button>
+        </a>
 
-    <a href="<!DOCTYPE html>
-<html>
-<head>
-    <title>MM Chats</title>
-</head>
-<body>
-
-    <h1>Welcome to MM Chats</h1>
-
-    <h2>Select Your Panel:</h2>
-
-    <a href="MMChats_Customer.html">
-        <button>Customer panel</button>
-    </a>
-
-    <br><br>
-
-    <a href="MMChats_Owner.html">
-        <button>Owner Panel</button>
-    </a>
-
-</body>
-</html>">
-        <button>Owner Panel</button>
-    </a>
-
-    <br><br>
-
-    <a href="mm_customer_final.html">
-        <button>Customer Panel</button>
-    </a>
+        <a href="MMChats_Owner.html">
+            <button class="btn owner">Owner Panel</button>
+        </a>
+    </div>
 
 </body>
 </html>
