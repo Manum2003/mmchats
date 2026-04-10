@@ -2887,30 +2887,51 @@ function applyShopStatus(isOpen) {
 
 /** Read status from localStorage (same-device admin) + JSONBin (cross-device) */
 async function checkAndApplyShopStatus(silent = false) {
-  let isOpen = isShopHours();   /* default: use time */
+  let isOpen = isShopHours();   /* default: auto time check */
 
-  /* 1. Read localStorage (works if admin is on same device/network) */
-  try {
-    const stored = JSON.parse(localStorage.getItem('mmShopStatus') || 'null');
-    if (stored && (Date.now() - stored.updatedAt < 120000)) {
-      /* Less than 2 min old — trust it */
-      isOpen = stored.isOpen;
-    }
-  } catch(e) {}
+  /* ── 1. Firebase (cross-device, instant) ── */
+  if (USE_FIREBASE) {
+    try {
+      const resp = await fetch(`${FIREBASE_URL}/mmchats/shopStatus.json`);
+      if (resp.ok) {
+        const shopStatus = await resp.json();
+        if (shopStatus && shopStatus.updatedAt &&
+            (Date.now() - shopStatus.updatedAt < 300000)) {
+          /* Trust Firebase if updated within last 5 minutes */
+          isOpen = shopStatus.isOpen;
+          /* Also cache locally */
+          localStorage.setItem('mmShopStatus', JSON.stringify(shopStatus));
+          applyShopStatus(isOpen);
+          return;
+        }
+      }
+    } catch(e) { /* fall through to other methods */ }
+  }
 
-  /* 2. Read from JSONBin cloud (cross-device sync) */
-  if (JSONBIN_URL) {
+  /* ── 2. JSONBin (cross-device fallback) ── */
+  if (USE_JSONBIN) {
     try {
       const resp = await fetch(JSONBIN_URL + '/latest', {
         headers: { 'X-Master-Key': JSONBIN_KEY }
       });
       const data = await resp.json();
       const shopStatus = data?.record?.shopStatus;
-      if (shopStatus && (Date.now() - shopStatus.updatedAt < 120000)) {
+      if (shopStatus && (Date.now() - shopStatus.updatedAt < 300000)) {
         isOpen = shopStatus.isOpen;
+        localStorage.setItem('mmShopStatus', JSON.stringify(shopStatus));
+        applyShopStatus(isOpen);
+        return;
       }
-    } catch(e) { /* silent — use localStorage/time fallback */ }
+    } catch(e) { /* fall through */ }
   }
+
+  /* ── 3. localStorage (same device fallback) ── */
+  try {
+    const stored = JSON.parse(localStorage.getItem('mmShopStatus') || 'null');
+    if (stored && (Date.now() - stored.updatedAt < 300000)) {
+      isOpen = stored.isOpen;
+    }
+  } catch(e) {}
 
   applyShopStatus(isOpen);
 }
@@ -2936,8 +2957,14 @@ function isShopOpenForOrder() {
 
 /** Start polling shop status every 10 seconds */
 function startShopStatusPolling() {
+  /* Run immediately */
   checkAndApplyShopStatus();
-  _shopStatusInterval = setInterval(() => checkAndApplyShopStatus(), 10000);
+  /* Then every 5 seconds */
+  _shopStatusInterval = setInterval(() => checkAndApplyShopStatus(), 5000);
+  /* Also check when tab becomes visible (user returns to browser) */
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) checkAndApplyShopStatus();
+  }, { once: false });
 }
 
 </script>
@@ -3004,7 +3031,7 @@ function startShopStatusPolling() {
       MM Chats Center is not taking orders right now.
     </div>
     <div class="sc-time-pill">
-      ⏰ Open Daily 4:30 PM – 9:00 PM
+      ⏰ Open Daily 4:30 PM – 10:00 PM
     </div>
     <div class="sc-countdown-box">
       <div class="sc-countdown-label">Opens in</div>
