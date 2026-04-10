@@ -1268,7 +1268,7 @@ document.addEventListener('DOMContentLoaded', () => {
 /* ══════════════════════════════════════════════════════════════
    SHOP OPEN / CLOSED SYSTEM
    ─────────────────────────────────────────────────────────────
-   Shop hours: 4:30 PM (16:30) to 10:00 PM (22:00)
+   Shop hours: 4:30 PM (16:30) to 9:00 PM (21:00)
    
    Logic:
    • Auto mode: opens/closes based on time automatically
@@ -1280,7 +1280,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const SHOP_OPEN_H  = 16;  /* 4 PM  */
 const SHOP_OPEN_M  = 30;  /* :30   */
-const SHOP_CLOSE_H = 22;  /* 10 PM */
+const SHOP_CLOSE_H = 22;  /* 9 PM */
 const SHOP_CLOSE_M = 0;   /* :00   */
 
 /* shopMode: 'auto' | 'manual_open' | 'manual_closed' */
@@ -1312,7 +1312,7 @@ async function broadcastShopStatus(isOpen) {
     mode:      shopMode,
     updatedAt: Date.now(),
     openTime:  '4:30 PM',
-    closeTime: '10:00 PM',
+    closeTime: '9:00 PM',
   };
   localStorage.setItem('mmShopStatus', JSON.stringify(status));
   /* Push to Firebase — customers will see within 5 seconds */
