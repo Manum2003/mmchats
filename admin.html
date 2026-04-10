@@ -611,38 +611,81 @@ const CAT_COLORS = {belpuri:'#8B6914',sev:'#C47A1B',bun:'#D4853A',masala:'#B5460
    CLOUD SYNC — JSONBin.io (same config as customer panel!)
    Paste the SAME Bin ID and API Key as in index.html
 ══════════════════════════════════════════════════════════════ */
-const JSONBIN_ID  = '';  // ← same Bin ID as index.html
-const JSONBIN_KEY = '';  // ← same API key as index.html
-const JSONBIN_URL = JSONBIN_ID
-  ? `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`
-  : null;
+/* ── SAME CONFIG AS index.html — paste same values ─────────
+   Option A: Firebase Realtime Database (instant real-time)
+   Option B: JSONBin.io (5s polling fallback)
+   Fill ONE only. Firebase is strongly recommended.            */
+const FIREBASE_URL = 'https://mmchats-34fc1-default-rtdb.firebaseio.com';
+const JSONBIN_ID   = '';
+const JSONBIN_KEY  = '';
+const JSONBIN_URL  = JSONBIN_ID ? `https://api.jsonbin.io/v3/b/${JSONBIN_ID}` : null;
+const USE_FIREBASE = !!FIREBASE_URL;
+const USE_JSONBIN  = !!JSONBIN_URL && !USE_FIREBASE;
 
 /* Pull all orders from cloud */
 async function cloudPullAdmin() {
-  if (!JSONBIN_URL) return null;
   try {
-    const resp = await fetch(JSONBIN_URL + '/latest', {
-      headers: { 'X-Master-Key': JSONBIN_KEY }
-    });
-    const data = await resp.json();
-    return data?.record?.orders || null;
+    if (USE_FIREBASE) {
+      const resp = await fetch(`${FIREBASE_URL}/mmchats.json`);
+      const data = await resp.json();
+      return data?.orders || null;
+    } else if (USE_JSONBIN) {
+      const resp = await fetch(JSONBIN_URL + '/latest', {
+        headers: { 'X-Master-Key': JSONBIN_KEY }
+      });
+      const data = await resp.json();
+      return data?.record?.orders || null;
+    }
+    return null;
   } catch(e) { return null; }
 }
 
 /* Push updated orders to cloud */
 async function cloudPushAdmin(ordersArr) {
-  if (!JSONBIN_URL) return;
   try {
-    await fetch(JSONBIN_URL, {
-      method:  'PUT',
-      headers: {
-        'Content-Type':    'application/json',
-        'X-Master-Key':    JSONBIN_KEY,
-        'X-Bin-Versioning':'false',
-      },
-      body: JSON.stringify({ orders: ordersArr }),
-    });
+    if (USE_FIREBASE) {
+      await fetch(`${FIREBASE_URL}/mmchats.json`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ orders: ordersArr }),
+      });
+    } else if (USE_JSONBIN) {
+      await fetch(JSONBIN_URL, {
+        method:  'PUT',
+        headers: {
+          'Content-Type':    'application/json',
+          'X-Master-Key':    JSONBIN_KEY,
+          'X-Bin-Versioning':'false',
+        },
+        body: JSON.stringify({ orders: ordersArr }),
+      });
+    }
   } catch(e) { /* silent */ }
+}
+
+/* Push shop open/close status to cloud */
+async function cloudPushShopStatus(statusObj) {
+  try {
+    if (USE_FIREBASE) {
+      await fetch(`${FIREBASE_URL}/mmchats/shopStatus.json`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(statusObj),
+      });
+    } else if (USE_JSONBIN) {
+      /* For JSONBin include shopStatus alongside orders */
+      const all = JSON.parse(localStorage.getItem('mmorders') || '[]');
+      await fetch(JSONBIN_URL, {
+        method:  'PUT',
+        headers: {
+          'Content-Type':    'application/json',
+          'X-Master-Key':    JSONBIN_KEY,
+          'X-Bin-Versioning':'false',
+        },
+        body: JSON.stringify({ orders: all, shopStatus: statusObj }),
+      });
+    }
+  } catch(e) {}
 }
 
 function getOrders() {
@@ -1217,18 +1260,8 @@ function broadcastShopStatus(isOpen) {
     closeTime: '10:00 PM',
   };
   localStorage.setItem('mmShopStatus', JSON.stringify(status));
-  /* Also push to JSONBin if configured */
-  if (JSONBIN_URL) {
-    fetch(JSONBIN_URL, {
-      method:  'PUT',
-      headers: {
-        'Content-Type':    'application/json',
-        'X-Master-Key':    JSONBIN_KEY,
-        'X-Bin-Versioning':'false',
-      },
-      body: JSON.stringify({ shopStatus: status }),
-    }).catch(() => {});
-  }
+  /* Push to cloud (Firebase or JSONBin) */
+  cloudPushShopStatus(status).catch(() => {});
 }
 
 /** Update the toggle UI to reflect current state */
@@ -1346,7 +1379,7 @@ function runShopAutoCheck() {
     updateShopToggleUI(nowOpen);
     showAdminToast(nowOpen
       ? '🟢 Shop auto-opened (4:30 PM reached)'
-      : '🔴 Shop auto-closed (10:00 PM reached)'
+      : '🔴 Shop auto-closed (9:00 PM reached)'
     );
   }
   /* Update countdown every minute */
