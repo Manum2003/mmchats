@@ -40,11 +40,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--tex
 .banner-dismiss{background:transparent;border:none;color:#fff;font-size:1.1rem;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;}
 
 /* ══ AUTH GATE ════════════════════════════════════════════ */
-#adminAuth{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;}
-.admin-login{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:36px 28px;width:100%;max-width:360px;text-align:center;}
-.admin-login .lock-icon{font-size:2.8rem;margin-bottom:14px;}
-.admin-login h2{font-size:1.3rem;font-weight:700;margin-bottom:4px;}
-.admin-login p{color:var(--muted);font-size:.82rem;margin-bottom:22px;}
+/* login removed */
 .a-input{width:100%;background:#0F0F1A;border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:.9rem;outline:none;margin-bottom:12px;transition:border-color .3s;}
 .a-input:focus{border-color:var(--orange);}
 .a-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--red),var(--orange));border:none;border-radius:10px;color:#fff;font-size:.95rem;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
@@ -319,24 +315,6 @@ tr:hover td{background:rgba(255,255,255,.02);}
 </button>
 
 <!-- AUTH GATE -->
-<div id="adminAuth">
-  <div class="admin-login">
-    <div class="lock-icon">🔐</div>
-    <h2>Admin Panel</h2>
-    <p>MM Chats Center — Shop Owner</p>
-    <input class="a-input" type="text" id="aUser"
-           placeholder="admin username" autocomplete="username"
-           autocapitalize="none" autocorrect="off" spellcheck="false">
-    <input class="a-input" type="password" id="aPass"
-           placeholder="admin password" autocomplete="current-password">
-    <button class="a-btn" id="loginBtn"
-            style="font-size:1.05rem;padding:16px;letter-spacing:.3px">
-      Login to Dashboard
-    </button>
-    <p class="hint" style="margin-top:16px;cursor:pointer;padding:10px;background:rgba(255,255,255,.05);border-radius:8px;border:1px dashed rgba(255,255,255,.15)">
-      👆 Tap here to auto-fill &amp; login instantly
-    </p>
-  </div>
 </div>
 
 <!-- MOBILE TOP BAR -->
@@ -1158,110 +1136,51 @@ function adminLogin(){
 
   /* ── Correct — save and show dashboard ── */
   btn.textContent = '✅ Logging in…';
-
-  /* Save permanently — never ask again on this browser */
   localStorage.setItem('mmAdminLoggedIn', 'yes');
-
-  /* Show dashboard */
   showDashboard();
+}
 
-/* ── SHOW DASHBOARD (bypasses credential check) ─────────────
-   Called when already logged in — skips username/password.
-   Used on page refresh and first auto-login.
-────────────────────────────────────────────────────────── */
+/* ── SHOW DASHBOARD ──────────────────────────────────────── */
 function showDashboard() {
-  /* Hide auth gate */
-  const authEl = document.getElementById('adminAuth');
-  if (authEl) {
-    authEl.style.display      = 'none';
-    authEl.style.visibility   = 'hidden';
-    authEl.style.zIndex       = '-1';
-    authEl.style.pointerEvents = 'none';
-  }
-
-  /* Show main UI */
+  /* Show all main UI elements */
   const mainEl    = document.getElementById('adminMain');
   const topBar    = document.getElementById('topBar');
   const bottomNav = document.getElementById('bottomNav');
   const soundTog  = document.getElementById('soundToggle');
-  if (mainEl)    { mainEl.style.display    = 'block'; mainEl.style.visibility = 'visible'; }
-  if (topBar)    { topBar.style.display    = 'flex'; }
-  if (bottomNav) { bottomNav.style.display = 'block'; }
-  if (soundTog)  { soundTog.style.display  = 'flex'; }
+  const sidebar   = document.getElementById('sidebar');
 
-  /* Wire sound toggle */
+  if (mainEl)    { mainEl.style.display    = 'block'; mainEl.style.visibility = 'visible'; }
+  if (topBar)    { topBar.style.display    = 'flex';  topBar.style.visibility = 'visible'; }
+  if (bottomNav) { bottomNav.style.display = 'block'; bottomNav.style.visibility = 'visible'; }
+  if (soundTog)  { soundTog.style.display  = 'flex';  }
+  if (sidebar)   { sidebar.style.display   = 'flex';  sidebar.style.visibility = 'visible'; }
+
+  soundTog?.removeEventListener('click', toggleSound);
   soundTog?.addEventListener('click', toggleSound);
 
-  /* Hide all sections first */
+  /* All sections hidden then show dashboard */
   document.querySelectorAll('.admin-section').forEach(s => { s.style.display = 'none'; });
 
-  /* Go to dashboard */
   currentSection = '';
   setTimeout(() => {
-    try { showSection('dashboard'); } catch(e) { console.error(e); }
-  }, 80);
+    try {
+      showSection('dashboard');
+      renderDashboard();
+    } catch(e) { console.error('[showDashboard]', e); }
+  }, 100);
 
-  /* Start services */
   setTimeout(() => {
-    try { initPolling(); }    catch(e) {}
-    try { initShopStatus(); } catch(e) {}
-  }, 300);
+    try { initPolling(); }    catch(e) { console.warn(e); }
+    try { initShopStatus(); } catch(e) { console.warn(e); }
+  }, 400);
 
-  /* Auto-refresh every 15s */
   setInterval(() => {
     try { if (currentSection === 'dashboard') renderDashboard(); } catch(e) {}
   }, 15000);
 }
 document.addEventListener('DOMContentLoaded', () => {
-  /* Hide all sections on load */
-  document.querySelectorAll('.admin-section').forEach(s => { s.style.display = 'none'; });
-
-  const soundTog = document.getElementById('soundToggle');
-  if (soundTog) soundTog.style.display = 'none';
-
-  /* ── PERMANENT LOGIN — auto-login on refresh ── */
-  const alreadyLoggedIn = localStorage.getItem('mmAdminLoggedIn') === 'yes';
-  if (alreadyLoggedIn) {
-    /* Already logged in — go straight to dashboard, skip login screen */
-    showDashboard();
-    /* Still wire nav buttons after showing dashboard */
-    document.getElementById('navMenu')?.addEventListener('click', e => {
-      const btn = e.target.closest('.nav-item[data-target]');
-      if (btn) showSection(btn.dataset.target);
-    });
-    document.getElementById('bottomNav')?.addEventListener('click', e => {
-      const btn = e.target.closest('.bnav[data-target]');
-      if (btn) showSection(btn.dataset.target);
-    });
-    document.getElementById('refreshBtn')?.addEventListener('click', renderDashboard);
-    document.getElementById('testOrderBtn')?.addEventListener('click', injectTestOrder);
-    document.getElementById('addItemBtn')?.addEventListener('click', addItem);
-    document.getElementById('testOrderBtnMobile')?.addEventListener('click', injectTestOrder);
-    return;
-  }
-
-  /* Fields empty — user types manually */
-  const uEl = document.getElementById('aUser');
-  const pEl = document.getElementById('aPass');
-  if (uEl) uEl.value = '';
-  if (pEl) pEl.value = '';
-  if (uEl) uEl.focus();
-
-  /* Wire login button */
-  const loginBtn = document.getElementById('loginBtn');
-  if (loginBtn) {
-    loginBtn.addEventListener('click', adminLogin);
-    loginBtn.addEventListener('touchend', e => { e.preventDefault(); adminLogin(); });
-  }
-
-  /* Enter key on password field */
-  if (pEl) {
-    pEl.addEventListener('keydown', e => { if (e.key === 'Enter') adminLogin(); });
-  }
-
-  /* Hint tap — removed autofill, user types manually */
-
-  if (soundTog) soundTog.addEventListener('click', toggleSound);
+  /* Show dashboard directly — no login needed */
+  showDashboard();
 
   /* Sidebar nav */
   document.getElementById('navMenu')?.addEventListener('click', e => {
