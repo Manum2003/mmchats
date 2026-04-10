@@ -325,17 +325,14 @@ tr:hover td{background:rgba(255,255,255,.02);}
     <h2>Admin Panel</h2>
     <p>MM Chats Center — Shop Owner</p>
     <input class="a-input" type="text" id="aUser"
-           placeholder="Username" autocomplete="username"
+           placeholder="" autocomplete="username"
            autocapitalize="none" autocorrect="off" spellcheck="false">
     <input class="a-input" type="password" id="aPass"
-           placeholder="Password" autocomplete="current-password">
+           placeholder="" autocomplete="current-password">
     <button class="a-btn" id="loginBtn"
             style="font-size:1.05rem;padding:16px;letter-spacing:.3px">
       Login to Dashboard
     </button>
-    <p class="hint" style="margin-top:16px;cursor:pointer;padding:10px;background:rgba(255,255,255,.05);border-radius:8px;border:1px dashed rgba(255,255,255,.15)">
-      👆 Tap here to auto-fill &amp; login instantly
-    </p>
   </div>
 </div>
 
@@ -414,7 +411,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
       </div>
       <div class="shop-timing-row">
         <span style="font-size:.9rem">⏰</span>
-        Auto: 4:30 PM – 10:00 PM
+        Auto: 4:30 PM – 9:00 PM
       </div>
       <div class="auto-countdown" id="shopCountdown"></div>
       <div class="shop-manual-note" id="shopManualNote"></div>
@@ -816,8 +813,16 @@ function updateStatus(status,orderId){
   const o=orders.find(x=>x.id===orderId);
   if(o){
     o.status=status;
-    /* Record delivery time when marked delivered */
-    if(status==='delivered') o.deliveredAt=new Date().toISOString();
+  if(status==='delivered') {
+    o.deliveredAt = new Date().toISOString();
+    /* Accumulate permanent revenue — never resets */
+    const prev = parseInt(localStorage.getItem('mmTotalRevenue') || '0');
+    const newTotal = prev + (o.total || 0);
+    localStorage.setItem('mmTotalRevenue', newTotal);
+    /* Accumulate permanent delivered count */
+    const prevD = parseInt(localStorage.getItem('mmTotalDelivered') || '0');
+    localStorage.setItem('mmTotalDelivered', prevD + 1);
+  }
     saveOrders(orders);
   }
   updatePendingBadge();
@@ -933,24 +938,67 @@ function showSection(target){
 
 /* ── RENDERS ──────────────────────────────────────────────── */
 function renderDashboard(){
-  const all     =getOrders();
-  const active  =all.filter(o=>o.status!=='delivered');
-  const total   =all.reduce((s,o)=>s+o.total,0);
-  const pending =active.filter(o=>o.status==='pending').length;
-  const delivered=all.filter(o=>o.status==='delivered').length;
+  const all      = getOrders();
+  const active   = all.filter(o => o.status !== 'delivered' && o.status !== 'cancelled');
+  const pending  = active.filter(o => o.status === 'pending').length;
+  const delivered = all.filter(o => o.status === 'delivered').length;
 
-  document.getElementById('dashStats').innerHTML=`
-    <div class="stat-card c-orange"><div class="stat-icon">⏳</div><div class="stat-num">${active.length}</div><div class="stat-label">Active Orders</div></div>
-    <div class="stat-card c-red"><div class="stat-icon">🔔</div><div class="stat-num">${pending}</div><div class="stat-label">Pending</div></div>
-    <div class="stat-card c-green"><div class="stat-icon">💰</div><div class="stat-num">₹${total}</div><div class="stat-label">Total Revenue</div></div>
-    <div class="stat-card c-blue"><div class="stat-icon">✅</div><div class="stat-num">${delivered}</div><div class="stat-label">Delivered Today</div></div>`;
+  /* ── All-time revenue — never resets ──────────────────────
+     We accumulate revenue from every delivered order and store
+     it permanently in localStorage so it survives clearing history.
+  ────────────────────────────────────────────────────────── */
+  const todayRevenue = all
+    .filter(o => o.status === 'delivered')
+    .reduce((s, o) => s + (o.total || 0), 0);
 
-  const el=document.getElementById('dashOrderList');
-  if(!active.length){
-    el.innerHTML=`<div class="empty-state"><div class="es-icon">🎉</div><p>All orders delivered! Dashboard is clear.</p></div>`;
+  /* Load previously saved cumulative total */
+  let savedTotal = parseInt(localStorage.getItem('mmTotalRevenue') || '0');
+
+  /* If current orders have more revenue than saved, update saved */
+  if (todayRevenue > savedTotal) {
+    savedTotal = todayRevenue;
+    localStorage.setItem('mmTotalRevenue', savedTotal);
+  }
+
+  /* Use the higher of the two so revenue never goes down */
+  const displayRevenue = Math.max(savedTotal, todayRevenue);
+
+  /* Count all-time delivered — saved separately */
+  let savedDelivered = parseInt(localStorage.getItem('mmTotalDelivered') || '0');
+  if (delivered > savedDelivered) {
+    savedDelivered = delivered;
+    localStorage.setItem('mmTotalDelivered', savedDelivered);
+  }
+  const displayDelivered = Math.max(savedDelivered, delivered);
+
+  document.getElementById('dashStats').innerHTML = `
+    <div class="stat-card c-orange">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-num">${active.length}</div>
+      <div class="stat-label">Active Orders</div>
+    </div>
+    <div class="stat-card c-red">
+      <div class="stat-icon">🔔</div>
+      <div class="stat-num">${pending}</div>
+      <div class="stat-label">Pending</div>
+    </div>
+    <div class="stat-card c-green">
+      <div class="stat-icon">💰</div>
+      <div class="stat-num">₹${displayRevenue}</div>
+      <div class="stat-label">Total Revenue</div>
+    </div>
+    <div class="stat-card c-blue">
+      <div class="stat-icon">✅</div>
+      <div class="stat-num">${displayDelivered}</div>
+      <div class="stat-label">All Delivered</div>
+    </div>`;
+
+  const el = document.getElementById('dashOrderList');
+  if (!active.length) {
+    el.innerHTML = `<div class="empty-state"><div class="es-icon">🎉</div><p>All orders delivered! Dashboard is clear.</p></div>`;
     return;
   }
-  el.innerHTML=active.map(orderCardHTML).join('');
+  el.innerHTML = active.map(orderCardHTML).join('');
 }
 
 function renderActiveOrders(){
@@ -1046,6 +1094,9 @@ function renderRevenue(){
   const catRev={belpuri:0,sev:0,bun:0,masala:0,slice:0,sprouts:0};
   let totalRev=0,totalSaved=0;
   orders.forEach(o=>{o.items.forEach(i=>{if(catRev[i.cat]!==undefined)catRev[i.cat]+=i.price*i.qty;totalRev+=i.price*i.qty;totalSaved+=((i.mrp||90)-i.price)*i.qty;});});
+  /* Use permanent stored total if higher (survives history clear) */
+  const permTotal = parseInt(localStorage.getItem('mmTotalRevenue') || '0');
+  if (permTotal > totalRev) totalRev = permTotal;
   const maxVal=Math.max(...Object.values(catRev),1);
   const catLabels={belpuri:'🍱 Belpuri',sev:'🫓 Sev Puri',bun:'🍔 Bun',masala:'🌶 Masala',slice:'🍍 Slices',sprouts:'🌱 Healthy'};
   const catClrs={belpuri:'#E23744',sev:'#FC8019',bun:'#FFD700',masala:'#48C479',slice:'#4A9EFF',sprouts:'#A78BFA'};
@@ -1091,8 +1142,8 @@ function adminLogin(){
     return;
   }
 
-  const validUser = (u === 'admin' || u === 'mmchats');
-  const validPass = (p === 'admin123' || p === 'mmchats123');
+  const validUser = (u === 'mmchats' || u === 'admin');
+  const validPass = (p === '2810');
 
   if (!validUser || !validPass) {
     btn.textContent = '❌ Wrong credentials';
@@ -1104,6 +1155,9 @@ function adminLogin(){
 
   /* ── Correct — show dashboard ── */
   btn.textContent = '✅ Logging in…';
+
+  /* Save login permanently — never ask again on this browser */
+  localStorage.setItem('mmAdminLoggedIn', 'yes');
 
   try {
     /* Hide auth gate */
@@ -1160,20 +1214,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const soundTog = document.getElementById('soundToggle');
   if (soundTog) soundTog.style.display = 'none';
 
-  /* ── Pre-fill credentials on load (saves time on mobile) ── */
+  /* ── PERMANENT LOGIN — stays logged in forever ── */
+  /* Check if already logged in from before */
+  const alreadyLoggedIn = localStorage.getItem('mmAdminLoggedIn') === 'yes';
+  if (alreadyLoggedIn) {
+    /* Already logged in — skip login screen, go straight to dashboard */
+    adminLogin();
+    return;
+  }
+
+  /* Fields empty — user types manually */
   const uEl = document.getElementById('aUser');
   const pEl = document.getElementById('aPass');
-  if (uEl && !uEl.value) uEl.value = 'admin';
-  if (pEl && !pEl.value) pEl.value = 'admin123';
-
-  /* Always show login screen — clear any saved session */
-  try { sessionStorage.removeItem('mmAdminAuth'); } catch(e) {}
+  if (uEl) uEl.value = '';
+  if (pEl) pEl.value = '';
+  if (uEl) uEl.focus();
 
   /* Wire login button */
   const loginBtn = document.getElementById('loginBtn');
   if (loginBtn) {
     loginBtn.addEventListener('click', adminLogin);
-    /* Also handle touch events explicitly for mobile */
     loginBtn.addEventListener('touchend', e => { e.preventDefault(); adminLogin(); });
   }
 
@@ -1182,12 +1242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pEl.addEventListener('keydown', e => { if (e.key === 'Enter') adminLogin(); });
   }
 
-  /* Hint tap — show it fills instantly and tries login */
-  document.querySelector('.hint')?.addEventListener('click', () => {
-    if (uEl) uEl.value = 'admin';
-    if (pEl) pEl.value = 'admin123';
-    adminLogin();
-  });
+  /* Hint tap — removed autofill, user types manually */
 
   if (soundTog) soundTog.addEventListener('click', toggleSound);
 
@@ -1384,7 +1439,7 @@ function runShopAutoCheck() {
     updateShopToggleUI(nowOpen);
     showAdminToast(nowOpen
       ? '🟢 Shop auto-opened (4:30 PM reached)'
-      : '🔴 Shop auto-closed (10:00 PM reached)'
+      : '🔴 Shop auto-closed (9:00 PM reached)'
     );
   }
   /* Update countdown every minute */
