@@ -1251,7 +1251,7 @@ function computeShopOpen() {
 }
 
 /** Push shop status to localStorage so customer panel can read it */
-function broadcastShopStatus(isOpen) {
+async function broadcastShopStatus(isOpen) {
   const status = {
     isOpen,
     mode:      shopMode,
@@ -1260,8 +1260,13 @@ function broadcastShopStatus(isOpen) {
     closeTime: '10:00 PM',
   };
   localStorage.setItem('mmShopStatus', JSON.stringify(status));
-  /* Push to cloud (Firebase or JSONBin) */
-  cloudPushShopStatus(status).catch(() => {});
+  /* Push to Firebase — customers will see within 5 seconds */
+  try {
+    await cloudPushShopStatus(status);
+    console.log('[Shop] Status pushed to Firebase:', isOpen ? 'OPEN' : 'CLOSED');
+  } catch(e) {
+    console.warn('[Shop] Firebase push failed, using localStorage only:', e);
+  }
 }
 
 /** Update the toggle UI to reflect current state */
@@ -1379,7 +1384,7 @@ function runShopAutoCheck() {
     updateShopToggleUI(nowOpen);
     showAdminToast(nowOpen
       ? '🟢 Shop auto-opened (4:30 PM reached)'
-      : '🔴 Shop auto-closed (9:00 PM reached)'
+      : '🔴 Shop auto-closed (10:00 PM reached)'
     );
   }
   /* Update countdown every minute */
@@ -1390,12 +1395,14 @@ function runShopAutoCheck() {
 function initShopStatus() {
   shopMode    = localStorage.getItem('mmShopMode') || 'auto';
   const isOpen = computeShopOpen();
+  /* Push current status to Firebase immediately on admin login */
   broadcastShopStatus(isOpen);
   updateShopToggleUI(isOpen);
   /* Auto-check every 30 seconds */
   setInterval(runShopAutoCheck, 30000);
   /* Update countdown every minute */
   setInterval(() => updateCountdown(document.getElementById('shopCountdown')), 60000);
+  console.log('[Shop] Status initialised:', isOpen ? 'OPEN' : 'CLOSED', '| Mode:', shopMode);
 }
 
 </script>
