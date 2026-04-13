@@ -412,7 +412,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
       style="width:100%;padding:14px;background:linear-gradient(135deg,#E23744,#FC8019);border:none;border-radius:10px;color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">
       Login to Dashboard
     </button>
-    <p style="margin-top:12px;font-size:.74rem;color:#6B6B8A">welcome to mmchats</p>
+    <p style="margin-top:12px;font-size:.74rem;color:#6B6B8A"></p>
   </div>
 </div>
 
@@ -926,8 +926,42 @@ let bannerTimer=null;
    3. Sound alert — repeats until confirmed
 ══════════════════════════════════════════════════════════════ */
 
-/* Your WhatsApp number — receives order alerts */
-const NOTIFY_WHATSAPP = '918618752739';  /* 91 + your number */
+/* ══════════════════════════════════════════════════════════════
+   AUTOMATIC WHATSAPP NOTIFICATION — CallMeBot (FREE)
+   ─────────────────────────────────────────────────────────────
+   Setup (one time only — 2 minutes):
+   1. Open WhatsApp on your phone
+   2. Add contact: +34 621 331 709  (save as "CallMeBot")
+   3. Send this exact message to that contact:
+        I allow callmebot to send me messages
+   4. You will receive a reply with your APIKEY (e.g. 1234567)
+   5. Paste your APIKEY below ↓
+   
+   API URL: https://api.callmebot.com/whatsapp.php
+   Free, no registration, sends to YOUR number only
+══════════════════════════════════════════════════════════════ */
+
+const CALLMEBOT_PHONE  = '918618752739';  /* 91 + your WhatsApp number */
+const CALLMEBOT_APIKEY = '8618752739';           /* ← paste your CallMeBot APIKEY here */
+
+/** Send automatic WhatsApp message via CallMeBot */
+async function sendWhatsAppAuto(message) {
+  if (!CALLMEBOT_APIKEY) {
+    console.warn('[WhatsApp] CALLMEBOT_APIKEY not set — skipping auto notification');
+    return false;
+  }
+  try {
+    const encodedMsg = encodeURIComponent(message);
+    const url = `https://api.callmebot.com/whatsapp.php?phone=${CALLMEBOT_PHONE}&text=${encodedMsg}&apikey=${CALLMEBOT_APIKEY}`;
+    /* Use no-cors since CallMeBot doesn't send CORS headers */
+    await fetch(url, { mode: 'no-cors' });
+    console.log('[WhatsApp] Auto notification sent ✅');
+    return true;
+  } catch(e) {
+    console.warn('[WhatsApp] Auto notification failed:', e);
+    return false;
+  }
+}
 
 /** Request browser notification permission on first load */
 function requestNotifPermission() {
@@ -936,7 +970,7 @@ function requestNotifPermission() {
   }
 }
 
-/** Show browser push notification + WhatsApp alert */
+/** Full notification: CallMeBot auto + browser push */
 function notifyNewOrder(order) {
   const name    = order?.customer?.name  || 'Customer';
   const phone   = order?.customer?.phone || '';
@@ -944,49 +978,31 @@ function notifyNewOrder(order) {
   const items   = order?.items?.map(i => i.name + '×' + i.qty).join(', ') || '';
   const orderId = order?.id              || '';
 
-  /* ── 1. Browser Notification (appears on phone lock screen) ── */
-  if ('Notification' in window && Notification.permission === 'granted') {
-    const n = new Notification('🔔 New Order! MM Chats', {
-      body:  `${name} · ₹${total}\n${items}`,
-      icon:  'https://manum2003.github.io/mmchats/icon.png',
-      badge: 'https://manum2003.github.io/mmchats/icon.png',
-      tag:   orderId,
-      requireInteraction: true,  /* stays until dismissed */
-      vibrate: [200, 100, 200],
-    });
-    n.onclick = () => { window.focus(); n.close(); };
-    /* Auto close after 30s if not clicked */
-    setTimeout(() => n.close(), 30000);
-  }
-
-  /* ── 2. Show WhatsApp alert button in banner ── */
-  const waMsg = encodeURIComponent(
-    `🔔 *New Order Alert!*\n` +
+  /* ── 1. AUTOMATIC WhatsApp via CallMeBot (no tap needed!) ── */
+  const waMsg =
+    `🔔 New Order! MM Chats\n` +
     `Order: #${orderId}\n` +
     `Customer: ${name}\n` +
     `Phone: ${phone}\n` +
     `Items: ${items}\n` +
-    `Total: ₹${total}\n` +
-    `Status: Pending`
-  );
-  const waUrl = `https://wa.me/${NOTIFY_WHATSAPP}?text=${waMsg}`;
+    `Total: Rs.${total}\n` +
+    `Status: Pending - Please Prepare!`;
 
-  /* Show WhatsApp button in the order banner */
-  setTimeout(() => {
-    const banner = document.getElementById('newOrderBanner');
-    if (!banner) return;
-    const existing = document.getElementById('waBannerBtn');
-    if (!existing) {
-      const waBtn = document.createElement('a');
-      waBtn.id    = 'waBannerBtn';
-      waBtn.href  = waUrl;
-      waBtn.target = '_blank';
-      waBtn.style.cssText = 'background:#25D366;color:#fff;padding:5px 12px;border-radius:8px;font-size:.76rem;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:5px;margin-left:8px;flex-shrink:0';
-      waBtn.innerHTML = '📱 WA Alert';
-      const bannerRight = banner.querySelector('.banner-right');
-      if (bannerRight) bannerRight.insertBefore(waBtn, bannerRight.firstChild);
-    }
-  }, 200);
+  sendWhatsAppAuto(waMsg);
+
+  /* ── 2. Browser Push Notification (lock screen alert) ── */
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      const n = new Notification('🔔 New Order! MM Chats', {
+        body:  `${name} · Rs.${total} · ${items.slice(0, 60)}`,
+        tag:   orderId,
+        requireInteraction: true,
+        vibrate: [200, 100, 200, 100, 200],
+      });
+      n.onclick = () => { window.focus(); n.close(); };
+      setTimeout(() => n.close(), 60000);
+    } catch(e) { /* silent */ }
+  }
 }
 
 let _soundLoopInterval = null;
@@ -2046,6 +2062,7 @@ function adminLogin(){
   /* ✅ Correct credentials */
   if (btn) { btn.textContent = '✅ Logging in…'; btn.style.background = '#48C479'; }
   localStorage.setItem('mmAdminLoggedIn', 'yes');
+  localStorage.setItem('mmAdminUser', 'mmchats');
 
   setTimeout(() => showDashboard(), 400);
 }
@@ -2053,6 +2070,7 @@ function adminLogin(){
 function adminLogout(){
   if (!confirm('Logout from admin panel?')) return;
   localStorage.removeItem('mmAdminLoggedIn');
+  localStorage.removeItem('mmAdminUser');
   location.reload();
 }
 function showDashboard() {
@@ -2096,30 +2114,32 @@ function showDashboard() {
   }, 15000);
 }
 document.addEventListener('DOMContentLoaded', () => {
-  /* Stay logged in until explicit logout — check saved session */
-  if (localStorage.getItem('mmAdminLoggedIn') === 'yes') {
+  /* Check saved login session */
+  const savedLogin = localStorage.getItem('mmAdminLoggedIn');
+  const savedUser  = localStorage.getItem('mmAdminUser');
+
+  /* Valid session = both key exists AND username matches */
+  if (savedLogin === 'yes' && savedUser === 'mmchats') {
     showDashboard();
     return;
   }
 
-  /* Wire login button — both click and touchend for mobile */
+  /* No valid session — clear anything old and show login */
+  localStorage.removeItem('mmAdminLoggedIn');
+  localStorage.removeItem('mmAdminUser');
+
+  /* Wire login button */
   const loginBtn = document.getElementById('loginBtn');
   if (loginBtn) {
     loginBtn.addEventListener('click', adminLogin);
     loginBtn.addEventListener('touchend', e => { e.preventDefault(); adminLogin(); });
   }
-
-  /* Enter key on password field */
   document.getElementById('aPass')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') adminLogin();
   });
-
-  /* Enter on username → jump to password */
   document.getElementById('aUser')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('aPass')?.focus();
   });
-
-  /* Focus username on load */
   setTimeout(() => document.getElementById('aUser')?.focus(), 300);
 
   /* Sidebar nav */
