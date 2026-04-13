@@ -80,7 +80,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--tex
 .header-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 
 /* ══ SPA SECTIONS ═════════════════════════════════════════ */
-.admin-section{opacity:0;}
+.admin-section{opacity:1;}
 .admin-section.section-visible{animation:sectionIn .22s ease forwards;}
 @keyframes sectionIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
@@ -216,76 +216,155 @@ tr:hover td{background:rgba(255,255,255,.02);}
   .top-bar{display:none!important;}
 }
 
-/* ══ SHOP STATUS TOGGLE ═══════════════════════════════════ */
+/* ══ SHOP STATUS — ZOMATO STYLE ═══════════════════════════ */
 .shop-toggle-wrap {
-  padding:14px;
-  border-top:1px solid var(--border);
-  background:var(--panel);
+  padding: 12px;
+  border-top: 1px solid var(--border);
 }
-.shop-toggle-card {
-  background:var(--card);
-  border:1.5px solid var(--border);
-  border-radius:14px;
-  padding:12px 14px;
-  transition:border-color .3s;
-}
-.shop-toggle-card.open-state  { border-color:var(--green); }
-.shop-toggle-card.closed-state { border-color:var(--red); }
-.shop-status-row {
-  display:flex; align-items:center;
-  justify-content:space-between; gap:10px;
-  margin-bottom:10px;
-}
-.shop-status-label {
-  font-size:.78rem; font-weight:700; color:var(--muted);
-  text-transform:uppercase; letter-spacing:.4px;
-}
-.shop-status-badge {
-  display:flex; align-items:center; gap:5px;
-  font-size:.8rem; font-weight:800;
-}
-.shop-status-badge .dot {
-  width:9px; height:9px; border-radius:50%;
-  animation:blink 1.5s infinite;
-}
-.shop-open-badge  { color:var(--green); }
-.shop-open-badge .dot  { background:var(--green); }
-.shop-closed-badge { color:var(--red); animation:none; }
-.shop-closed-badge .dot { background:var(--red); animation:none; }
 
-/* iOS-style toggle switch */
-.toggle-switch {
-  position:relative; width:52px; height:28px; flex-shrink:0;
+/* Main status card */
+.shop-status-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color .3s;
 }
-.toggle-switch input { opacity:0; width:0; height:0; }
-.toggle-slider {
-  position:absolute; inset:0;
-  background:#2A2A3D; border-radius:28px;
-  cursor:pointer; transition:.3s;
-}
-.toggle-slider::before {
-  content:'';
-  position:absolute; width:22px; height:22px;
-  left:3px; bottom:3px;
-  background:#fff; border-radius:50%;
-  transition:.3s; box-shadow:0 1px 4px rgba(0,0,0,.3);
-}
-.toggle-switch input:checked + .toggle-slider { background:var(--green); }
-.toggle-switch input:checked + .toggle-slider::before { transform:translateX(24px); }
+.shop-status-card.is-open   { border-color: var(--green); }
+.shop-status-card.is-closed { border-color: var(--red);   }
 
+/* Top row — status + big toggle */
+.shop-top-row {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 11px 13px 8px;
+}
+.shop-top-left {}
+.shop-mode-chip {
+  font-size: .6rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .5px;
+  padding: 2px 7px; border-radius: 4px;
+  margin-bottom: 4px; display: inline-block;
+}
+.chip-auto    { background: rgba(74,158,255,.15); color: var(--blue); }
+.chip-manual  { background: rgba(252,128,25,.15); color: var(--orange); }
+.chip-holiday { background: rgba(167,139,250,.15); color: var(--purple); }
+
+.shop-status-text {
+  font-size: .95rem; font-weight: 900;
+  display: flex; align-items: center; gap: 6px;
+}
+.shop-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-open   { background: var(--green); animation: pulse-green 1.5s infinite; }
+.dot-closed { background: var(--red); }
+@keyframes pulse-green {
+  0%,100% { box-shadow: 0 0 0 0 rgba(72,196,121,.5); }
+  50%      { box-shadow: 0 0 0 5px rgba(72,196,121,0); }
+}
+
+.shop-sub-text {
+  font-size: .7rem; color: var(--muted);
+  margin-top: 2px; font-weight: 500;
+}
+
+/* Big toggle */
+.big-toggle {
+  position: relative; width: 58px; height: 30px; flex-shrink: 0;
+  cursor: pointer;
+}
+.big-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.big-toggle-track {
+  position: absolute; inset: 0;
+  background: #2A2A3D; border-radius: 30px;
+  transition: background .3s;
+}
+.big-toggle-thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: #fff; transition: transform .3s;
+  box-shadow: 0 2px 5px rgba(0,0,0,.4);
+}
+.big-toggle input:checked ~ .big-toggle-track { background: var(--green); }
+.big-toggle input:checked ~ .big-toggle-thumb { transform: translateX(28px); }
+
+/* Timing row */
 .shop-timing-row {
-  display:flex; align-items:center; gap:6px;
-  font-size:.72rem; color:var(--muted);
-  margin-bottom:8px;
+  padding: 0 13px 8px;
+  font-size: .72rem; color: var(--muted);
+  display: flex; align-items: center; gap: 5px;
 }
-.shop-manual-note {
-  font-size:.68rem; color:var(--muted);
-  line-height:1.4; margin-top:6px;
-  padding-top:8px; border-top:1px solid var(--border);
+
+/* Countdown */
+.shop-countdown {
+  padding: 0 13px 6px;
+  font-size: .72rem; font-weight: 700; color: var(--blue);
 }
-.auto-countdown {
-  font-size:.72rem; color:var(--blue);
-  font-weight:700; margin-top:4px;
+
+/* Quick action buttons */
+.shop-actions {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 6px; padding: 8px 10px 10px;
+  border-top: 1px solid var(--border);
+}
+.shop-action-btn {
+  padding: 7px 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: .65rem; font-weight: 700;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  transition: .2s;
+  text-align: center; line-height: 1.4;
+}
+.shop-action-btn:hover   { background: rgba(255,255,255,.06); }
+.shop-action-btn.act-open  { border-color: var(--green); color: var(--green); }
+.shop-action-btn.act-close { border-color: var(--red);   color: var(--red);   }
+.shop-action-btn.act-today { border-color: var(--orange); color: var(--orange); }
+.shop-action-btn.act-off   { border-color: var(--purple); color: var(--purple); }
+.shop-action-btn.selected  { background: rgba(72,196,121,.15); }
+
+/* Holiday/off popup modal */
+.shop-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.7);
+  z-index: 9000;
+  display: none; align-items: flex-end; justify-content: center;
+}
+.shop-modal-overlay.show { display: flex; }
+.shop-modal-sheet {
+  background: var(--panel);
+  border-radius: 20px 20px 0 0;
+  width: 100%; max-width: 420px;
+  padding: 20px 20px 32px;
+}
+.shop-modal-title {
+  font-size: 1rem; font-weight: 800;
+  margin-bottom: 16px; text-align: center;
+}
+.shop-modal-option {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 14px; border-radius: 11px;
+  border: 1.5px solid var(--border);
+  cursor: pointer; margin-bottom: 9px;
+  transition: .2s;
+}
+.shop-modal-option:hover { border-color: var(--orange); background: rgba(252,128,25,.07); }
+.shop-modal-option.selected { border-color: var(--orange); background: rgba(252,128,25,.1); }
+.smo-icon { font-size: 1.4rem; flex-shrink: 0; }
+.smo-title { font-size: .88rem; font-weight: 800; }
+.smo-sub   { font-size: .72rem; color: var(--muted); margin-top: 1px; }
+.shop-modal-cancel {
+  width: 100%; padding: 11px;
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 10px; color: var(--muted);
+  font-size: .85rem; font-weight: 700;
+  cursor: pointer; font-family: 'Space Grotesk', sans-serif;
+  margin-top: 6px;
 }
 
 </style>
@@ -317,6 +396,26 @@ tr:hover td{background:rgba(255,255,255,.02);}
 <!-- AUTH GATE -->
 </div>
 
+<!-- ADMIN LOGIN SCREEN -->
+<div id="adminAuth" style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;font-family:'Space Grotesk',sans-serif">
+  <div style="background:#13131A;border:1px solid #2A2A3D;border-radius:20px;padding:36px 28px;width:100%;max-width:360px;text-align:center">
+    <div style="font-size:2.8rem;margin-bottom:14px">🔐</div>
+    <h2 style="font-size:1.3rem;font-weight:800;color:#fff;margin-bottom:4px">Admin Panel</h2>
+    <p style="color:#6B6B8A;font-size:.82rem;margin-bottom:24px">MM Chats Center — Shop Owner</p>
+    <input id="aUser" type="text" placeholder="Username"
+      autocomplete="username" autocapitalize="none" autocorrect="off"
+      style="width:100%;background:#0F0F1A;border:1px solid #2A2A3D;border-radius:10px;padding:13px 14px;color:#fff;font-family:'Space Grotesk',sans-serif;font-size:.9rem;outline:none;margin-bottom:12px;box-sizing:border-box">
+    <input id="aPass" type="password" placeholder="Password"
+      autocomplete="current-password"
+      style="width:100%;background:#0F0F1A;border:1px solid #2A2A3D;border-radius:10px;padding:13px 14px;color:#fff;font-family:'Space Grotesk',sans-serif;font-size:.9rem;outline:none;margin-bottom:16px;box-sizing:border-box">
+    <button id="loginBtn"
+      style="width:100%;padding:14px;background:linear-gradient(135deg,#E23744,#FC8019);border:none;border-radius:10px;color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">
+      Login to Dashboard
+    </button>
+    <p style="margin-top:12px;font-size:.74rem;color:#6B6B8A">mmchats / 2810</p>
+  </div>
+</div>
+
 <!-- MOBILE TOP BAR -->
 <div class="top-bar" id="topBar" style="display:none">
   <div class="top-bar-logo">MM Chats Admin</div>
@@ -345,62 +444,135 @@ tr:hover td{background:rgba(255,255,255,.02);}
     <p><span class="live-dot"></span> Live Dashboard</p>
   </div>
   <nav class="nav-menu" id="navMenu">
-    <button class="nav-item active" data-target="dashboard">
+    <button class="nav-item active" data-target="dashboard" onclick="showSection('dashboard')">
       <span class="ic"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3h-8z"/></svg></span>
       Dashboard
     </button>
-    <button class="nav-item" data-target="orders">
+    <button class="nav-item" data-target="orders" onclick="showSection('orders')">
       <span class="ic"><svg viewBox="0 0 24 24"><path d="M19.5 3.5L18 2l-1.5 1.5L15 2l-1.5 1.5L12 2l-1.5 1.5L9 2 7.5 3.5 6 2v14H3v3c0 1.66 1.34 3 3 3h12c1.66 0 3-1.34 3-3V2l-1.5 1.5zM19 19c0 .55-.45 1-1 1H6c-.55 0-1-.45-1-1v-1h14v1zM18 16H6V4h12v12z"/></svg></span>
       Active Orders
     </button>
-    <button class="nav-item" data-target="history">
+    <button class="nav-item" data-target="history" onclick="showSection('history')">
       <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg></span>
       Order History
     </button>
-    <button class="nav-item" data-target="menu">
+    <button class="nav-item" data-target="menu" onclick="showSection('menu')">
       <span class="ic"><svg viewBox="0 0 24 24"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg></span>
       Menu Items
     </button>
-    <button class="nav-item" data-target="add-item">
+    <button class="nav-item" data-target="add-item" onclick="showSection('add-item')">
       <span class="ic"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></span>
       Add Item
     </button>
-    <button class="nav-item" data-target="users">
+    <button class="nav-item" data-target="users" onclick="showSection('users')">
       <span class="ic"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></span>
       Users
     </button>
-    <button class="nav-item" data-target="revenue">
+    <button class="nav-item" data-target="revenue" onclick="showSection('revenue')">
       <span class="ic"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></span>
       Revenue
     </button>
   </nav>
-  <!-- Shop Toggle -->
+  <!-- Shop Status — Zomato Style -->
   <div class="shop-toggle-wrap">
-    <div class="shop-toggle-card" id="shopToggleCard">
-      <div class="shop-status-row">
-        <div>
-          <div class="shop-status-label">Shop Status</div>
-          <div class="shop-status-badge shop-open-badge" id="shopStatusBadge">
-            <span class="dot"></span>
+    <div class="shop-status-card is-open" id="shopToggleCard">
+
+      <!-- Status + Toggle -->
+      <div class="shop-top-row">
+        <div class="shop-top-left">
+          <span class="shop-mode-chip chip-auto" id="shopModeChip">AUTO</span>
+          <div class="shop-status-text" id="shopStatusBadge">
+            <span class="shop-dot dot-open" id="shopDot"></span>
             <span id="shopStatusText">Open</span>
           </div>
+          <div class="shop-sub-text" id="shopSubText">Following schedule</div>
         </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="shopToggleSwitch" checked onchange="manualToggleShop(this.checked)">
-          <span class="toggle-slider"></span>
+        <label class="big-toggle" title="Toggle shop open/closed">
+          <input type="checkbox" id="shopToggleSwitch" checked
+                 onchange="manualToggleShop(this.checked)">
+          <div class="big-toggle-track"></div>
+          <div class="big-toggle-thumb"></div>
         </label>
       </div>
-      <div class="shop-timing-row">
-        <span style="font-size:.9rem">⏰</span>
-        Auto: 4:30 PM – 10:00 PM
+
+      <!-- Timing -->
+      <div class="shop-timing-row">⏰ 4:30 PM – 9:00 PM daily</div>
+      <div class="shop-countdown" id="shopCountdown"></div>
+
+      <!-- Quick Actions — like Zomato restaurant panel -->
+      <div class="shop-actions">
+        <button class="shop-action-btn act-open"
+                onclick="quickAction('open_now')"
+                title="Open shop now (override)">
+          🟢 Open Now
+        </button>
+        <button class="shop-action-btn act-close"
+                onclick="quickAction('close_now')"
+                title="Close shop now">
+          🔴 Close Now
+        </button>
+        <button class="shop-action-btn act-today"
+                onclick="quickAction('close_today')"
+                title="Close for rest of today">
+          📅 Off Today
+        </button>
+        <button class="shop-action-btn act-off"
+                onclick="showHolidayModal()"
+                title="Close for multiple days">
+          🎉 Holiday
+        </button>
       </div>
-      <div class="auto-countdown" id="shopCountdown"></div>
-      <div class="shop-manual-note" id="shopManualNote"></div>
+
+    </div>
+  </div>
+
+  <!-- Holiday / Extended Close Modal -->
+  <div class="shop-modal-overlay" id="shopHolidayModal">
+    <div class="shop-modal-sheet">
+      <div class="shop-modal-title">🎉 How long will you be away?</div>
+
+      <div class="shop-modal-option" onclick="selectHoliday('tomorrow')">
+        <span class="smo-icon">1️⃣</span>
+        <div>
+          <div class="smo-title">Back Tomorrow</div>
+          <div class="smo-sub">Open again at 4:30 PM tomorrow</div>
+        </div>
+      </div>
+
+      <div class="shop-modal-option" onclick="selectHoliday('2days')">
+        <span class="smo-icon">2️⃣</span>
+        <div>
+          <div class="smo-title">2 Days Off</div>
+          <div class="smo-sub">Reopens day after tomorrow</div>
+        </div>
+      </div>
+
+      <div class="shop-modal-option" onclick="selectHoliday('week')">
+        <span class="smo-icon">📆</span>
+        <div>
+          <div class="smo-title">This Week Off</div>
+          <div class="smo-sub">Closed for 7 days</div>
+        </div>
+      </div>
+
+      <div class="shop-modal-option" onclick="selectHoliday('indefinite')">
+        <span class="smo-icon">♾️</span>
+        <div>
+          <div class="smo-title">Until I Reopen</div>
+          <div class="smo-sub">Stays closed until you manually open</div>
+        </div>
+      </div>
+
+      <button class="shop-modal-cancel" onclick="closeHolidayModal()">Cancel</button>
     </div>
   </div>
   <div class="sidebar-bottom">
     <div>📍 Global Village, Kengeri</div>
     <div style="color:var(--green);margin-top:3px">📞 8618752739</div>
+    <button onclick="adminLogout()"
+      style="margin-top:10px;width:100%;padding:8px;background:rgba(226,55,68,.12);border:1px solid rgba(226,55,68,.3);border-radius:8px;color:#E23744;font-size:.76rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">
+      🔓 Logout
+    </button>
   </div>
 </div>
 
@@ -594,6 +766,24 @@ const CAT_COLORS = {belpuri:'#8B6914',sev:'#C47A1B',bun:'#D4853A',masala:'#B5460
    Option B: JSONBin.io (5s polling fallback)
    Fill ONE only. Firebase is strongly recommended.            */
 const FIREBASE_URL = 'https://mmchats-34fc1-default-rtdb.firebaseio.com';
+
+/* ══════════════════════════════════════════════════════════════
+   BORZO AUTOMATIC DELIVERY CONFIG
+   ─────────────────────────────────────────────────────────────
+   Step 1: Register → borzodelivery.com/in/business
+   Step 2: Settings → API → copy your token
+   Step 3: Paste token below ↓
+   Step 4: Set BORZO_TEST = false when ready for live bookings
+══════════════════════════════════════════════════════════════ */
+const BORZO_TOKEN = 'BB2361108289B42E0BB04FF22A02D666BA3691EE';       /* ← paste your Borzo API token here */
+const BORZO_TEST  = true;     /* true = test mode | false = live bookings */
+const BORZO_API   = BORZO_TEST
+  ? 'https://robotapitest-in.borzodelivery.com/api/business/1.6'
+  : 'https://robotapi-in.borzodelivery.com/api/business/1.6';
+
+const BORZO_PICKUP_ADDRESS = 'MM Chats Center, Global Village Back Gate, Kengeri, Bangalore 560059';
+const BORZO_PICKUP_PHONE   = '918618752739';
+const BORZO_PICKUP_NAME    = 'MM Chats Center';
 const JSONBIN_ID   = '';
 const JSONBIN_KEY  = '';
 const JSONBIN_URL  = JSONBIN_ID ? `https://api.jsonbin.io/v3/b/${JSONBIN_ID}` : null;
@@ -675,7 +865,14 @@ function saveOrders(a) {
 }
 function getUsers()       { return JSON.parse(localStorage.getItem('mmusers')||'[]'); }
 function getCustomItems() { return JSON.parse(localStorage.getItem('mmCustomItems')||'[]'); }
-function getAllItems()     { return [...MENU_BASE,...getCustomItems()]; }
+function getAllItems() {
+  const overrides = JSON.parse(localStorage.getItem('mmItemOverrides') || '{}');
+  const base = MENU_BASE.map(item => {
+    const ov = overrides[item.id];
+    return ov ? { ...item, ...ov } : item;
+  });
+  return [...base, ...getCustomItems()];
+}
 
 /* Active = pending/preparing/out_for_delivery  |  History = delivered */
 function getActiveOrders()  { return getOrders().filter(o=>o.status!=='delivered'); }
@@ -719,17 +916,116 @@ function toggleSound(){
 
 /* ── BANNER ─────────────────────────────────────────────── */
 let bannerTimer=null;
+
+/* ══════════════════════════════════════════════════════════════
+   WHATSAPP ORDER NOTIFICATION (INSTANT — NO API NEEDED)
+   ─────────────────────────────────────────────────────────────
+   When new order arrives:
+   1. Browser notification (if permission granted) — instant
+   2. WhatsApp notification link — opens WA with order details
+   3. Sound alert — repeats until confirmed
+══════════════════════════════════════════════════════════════ */
+
+/* Your WhatsApp number — receives order alerts */
+const NOTIFY_WHATSAPP = '918618752739';  /* 91 + your number */
+
+/** Request browser notification permission on first load */
+function requestNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+/** Show browser push notification + WhatsApp alert */
+function notifyNewOrder(order) {
+  const name    = order?.customer?.name  || 'Customer';
+  const phone   = order?.customer?.phone || '';
+  const total   = order?.total           || 0;
+  const items   = order?.items?.map(i => i.name + '×' + i.qty).join(', ') || '';
+  const orderId = order?.id              || '';
+
+  /* ── 1. Browser Notification (appears on phone lock screen) ── */
+  if ('Notification' in window && Notification.permission === 'granted') {
+    const n = new Notification('🔔 New Order! MM Chats', {
+      body:  `${name} · ₹${total}\n${items}`,
+      icon:  'https://manum2003.github.io/mmchats/icon.png',
+      badge: 'https://manum2003.github.io/mmchats/icon.png',
+      tag:   orderId,
+      requireInteraction: true,  /* stays until dismissed */
+      vibrate: [200, 100, 200],
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+    /* Auto close after 30s if not clicked */
+    setTimeout(() => n.close(), 30000);
+  }
+
+  /* ── 2. Show WhatsApp alert button in banner ── */
+  const waMsg = encodeURIComponent(
+    `🔔 *New Order Alert!*\n` +
+    `Order: #${orderId}\n` +
+    `Customer: ${name}\n` +
+    `Phone: ${phone}\n` +
+    `Items: ${items}\n` +
+    `Total: ₹${total}\n` +
+    `Status: Pending`
+  );
+  const waUrl = `https://wa.me/${NOTIFY_WHATSAPP}?text=${waMsg}`;
+
+  /* Show WhatsApp button in the order banner */
+  setTimeout(() => {
+    const banner = document.getElementById('newOrderBanner');
+    if (!banner) return;
+    const existing = document.getElementById('waBannerBtn');
+    if (!existing) {
+      const waBtn = document.createElement('a');
+      waBtn.id    = 'waBannerBtn';
+      waBtn.href  = waUrl;
+      waBtn.target = '_blank';
+      waBtn.style.cssText = 'background:#25D366;color:#fff;padding:5px 12px;border-radius:8px;font-size:.76rem;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:5px;margin-left:8px;flex-shrink:0';
+      waBtn.innerHTML = '📱 WA Alert';
+      const bannerRight = banner.querySelector('.banner-right');
+      if (bannerRight) bannerRight.insertBefore(waBtn, bannerRight.firstChild);
+    }
+  }, 200);
+}
+
+let _soundLoopInterval = null;
+
 function showNewOrderBanner(order){
   const banner=document.getElementById('newOrderBanner');
   document.getElementById('bannerText').textContent=`🔔 New Order! ${order?.customer?.name||''} · ₹${order?.total||''}`;
   banner.classList.add('show');
   playOrderMelody();
+  notifyNewOrder(order);   /* WhatsApp + browser push */
   clearTimeout(bannerTimer);
-  bannerTimer=setTimeout(dismissBanner,30000);
+  bannerTimer=setTimeout(dismissBanner, 60000);
+
+  /* ── Repeat sound every 8 seconds until order is confirmed ──
+     Stops when admin changes order status (any status change)
+  ────────────────────────────────────────────────────────── */
+  clearInterval(_soundLoopInterval);
+  _soundLoopInterval = setInterval(() => {
+    /* Keep ringing until all orders are no longer pending */
+    const hasPending = getOrders().some(o => o.status === 'pending');
+    if (hasPending) {
+      playOrderMelody();
+    } else {
+      /* All orders confirmed — stop ringing */
+      clearInterval(_soundLoopInterval);
+      _soundLoopInterval = null;
+    }
+  }, 8000);
 }
+
 function dismissBanner(){
   document.getElementById('newOrderBanner').classList.remove('show');
   clearTimeout(bannerTimer);
+  /* Don't stop sound here — only stop when order is confirmed */
+}
+
+function stopOrderSound(){
+  clearInterval(_soundLoopInterval);
+  _soundLoopInterval = null;
 }
 
 /* ── POLLING ─────────────────────────────────────────────── */
@@ -804,6 +1100,13 @@ function updateStatus(status,orderId){
     const prevD = parseInt(localStorage.getItem('mmTotalDelivered') || '0');
     localStorage.setItem('mmTotalDelivered', prevD + 1);
   }
+  /* ── AUTO BOOK BORZO when you mark order as Preparing ───────
+     The moment you tap "Preparing" → Borzo bike auto-booked
+     No need to tap any button manually.
+  ────────────────────────────────────────────────────────── */
+  if (status === 'preparing') {
+    setTimeout(() => autoBookBorzoIfConfigured(o), 800);
+  }
     saveOrders(orders);
   }
   updatePendingBadge();
@@ -813,6 +1116,11 @@ function updateStatus(status,orderId){
   if(currentSection==='history')renderHistory();
   /* If just delivered: show toast */
   if(status==='delivered') showAdminToast('✅ Order delivered & cleared from dashboard!');
+  /* Stop alert sound when admin acknowledges order */
+  if (status === 'preparing' || status === 'out_for_delivery' || status === 'delivered' || status === 'cancelled') {
+    const stillPending = getOrders().some(o => o.status === 'pending');
+    if (!stillPending) stopOrderSound();
+  }
 }
 
 /* ── HELPERS ─────────────────────────────────────────────── */
@@ -824,30 +1132,480 @@ function statusBadge(status){
 function statusSelectHTML(orderId,current){
   const opts=['pending','preparing','out_for_delivery','delivered'];
   const labels={pending:'⏳ Pending',preparing:'🔥 Preparing',out_for_delivery:'🛵 Out for Delivery',delivered:'✅ Delivered'};
-  return `<select class="status-sel" onchange="updateStatus(this.value,'${orderId}')">
-    ${opts.map(o=>`<option value="${o}" ${o===current?'selected':''}>${labels[o]}</option>`).join('')}
-  </select>`;
+  return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+    <select class="status-sel" onchange="updateStatus(this.value,'${orderId}')">
+      ${opts.map(o=>`<option value="${o}" ${o===current?'selected':''}>${labels[o]}</option>`).join('')}
+    </select>
+    <button onclick="cancelOrder('${orderId}')"
+      style="padding:7px 12px;background:rgba(226,55,68,.15);border:1px solid rgba(226,55,68,.35);border-radius:8px;color:#E23744;font-size:.76rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;white-space:nowrap;flex-shrink:0">
+      ✕ Cancel
+    </button>
+  </div>`;
 }
+
+function cancelOrder(orderId) {
+  if (!confirm('Cancel order #' + orderId + '?\nCustomer will need to be refunded manually.')) return;
+  const orders = getOrders();
+  const o = orders.find(x => x.id === orderId);
+  if (!o) return;
+  o.status      = 'cancelled';
+  o.cancelledAt = new Date().toISOString();
+  saveOrders(orders);
+  updatePendingBadge();
+  stopOrderSound();
+  if (currentSection === 'dashboard') renderDashboard();
+  if (currentSection === 'orders')    renderActiveOrders();
+  showAdminToast('❌ Order #' + orderId + ' cancelled');
+}
+/* ── SHOP ADDRESS (for Rapido pickup) ─────────────────────── */
+const SHOP_NAME    = 'MM Chats Center';
+const SHOP_ADDRESS = 'Global Village Back Gate, Kengeri, Bangalore 560059';
+const SHOP_LAT_ADM = 12.9062;
+const SHOP_LNG_ADM = 77.4853;
+const SHOP_PHONE   = '8618752739';
+
+
+/* ══════════════════════════════════════════════════════════════
+   BORZO DELIVERY API — AUTOMATIC BOOKING
+   ─────────────────────────────────────────────────────────────
+   Flow:
+   1. Order placed by customer
+   2. Admin sees order + clicks "Accept & Book Delivery"
+      OR auto-books after admin confirms payment
+   3. Borzo assigns bike within 7 minutes
+   4. Live tracking SMS sent to customer automatically
+   5. Order status updates in your admin panel
+══════════════════════════════════════════════════════════════ */
+
+/** Calculate delivery price before booking */
+async function borzoCalculatePrice(dropAddress) {
+  if (!BORZO_TOKEN) return null;
+  try {
+    const resp = await fetch(`${BORZO_API}/calculate-order`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':   'application/json',
+        'X-DV-Auth-Token': BORZO_TOKEN,
+      },
+      body: JSON.stringify({
+        matter: 'Food & Snacks',
+        vehicle_type_id: 8,   /* 8 = Motorbike (cheapest, fastest) */
+        points: [
+          { address: BORZO_PICKUP_ADDRESS },
+          { address: dropAddress },
+        ],
+      }),
+    });
+    const data = await resp.json();
+    if (data.is_successful && data.order) {
+      return data.order;   /* contains delivery_fee_amount */
+    }
+    return null;
+  } catch(e) {
+    console.error('[Borzo] Calculate error:', e);
+    return null;
+  }
+}
+
+/** Book delivery automatically */
+async function borzoBookDelivery(order) {
+  if (!BORZO_TOKEN) {
+    showAdminToast('⚠️ Borzo API token not set. Add token in admin.html');
+    showRapidoModal(order);   /* fallback to manual */
+    return;
+  }
+
+  const custAddr  = order.customer?.addr  || '';
+  const custPhone = '91' + (order.customer?.phone || '').replace(/\D/g,'').slice(-10);
+  const custName  = order.customer?.name  || 'Customer';
+  const items     = order.items?.map(i => i.name + '×' + i.qty).join(', ') || 'Chaat items';
+  const orderId   = order.id;
+
+  showAdminToast('🛵 Booking Borzo delivery…');
+
+  try {
+    const resp = await fetch(`${BORZO_API}/create-order`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':    'application/json',
+        'X-DV-Auth-Token': BORZO_TOKEN,
+      },
+      body: JSON.stringify({
+        matter:          `MM Chats Order ${orderId}: ${items}`,
+        vehicle_type_id: 8,          /* Motorbike */
+        is_client_notification_enabled:         true,  /* SMS to you */
+        is_contact_person_notification_enabled: true,  /* SMS to customer */
+        points: [
+          /* Point 1 — Pickup: Your shop */
+          {
+            address: BORZO_PICKUP_ADDRESS,
+            contact_person: {
+              name:  BORZO_PICKUP_NAME,
+              phone: BORZO_PICKUP_PHONE,
+            },
+            is_order_payment_here: false,
+          },
+          /* Point 2 — Drop: Customer */
+          {
+            address: custAddr + ', Bangalore',
+            contact_person: {
+              name:  custName,
+              phone: custPhone,
+            },
+            client_order_id: orderId,
+            is_order_payment_here: false,
+          },
+        ],
+      }),
+    });
+
+    const data = await resp.json();
+
+    if (data.is_successful && data.order) {
+      const borzoOrderId  = data.order.order_id;
+      const trackingUrl   = data.order.tracking_url || '';
+      const deliveryPrice = data.order.delivery_fee_amount || '?';
+
+      /* Save borzo order ID with this order */
+      const orders = getOrders();
+      const o = orders.find(x => x.id === orderId);
+      if (o) {
+        o.borzoOrderId  = borzoOrderId;
+        o.borzoTracking = trackingUrl;
+        o.status        = 'out_for_delivery';
+        saveOrders(orders);
+      }
+
+      /* Update status to Out for Delivery */
+      updateStatus('out_for_delivery', orderId);
+
+      /* Show success */
+      showBorzoSuccess(orderId, borzoOrderId, trackingUrl, deliveryPrice, order);
+
+      showAdminToast(`✅ Borzo booked! Bike assigned · ₹${deliveryPrice} charge`);
+      return data.order;
+
+    } else {
+      /* API returned error */
+      const errMsg = data.errors?.join(', ') || 'Unknown error';
+      console.error('[Borzo] Booking failed:', data);
+      showAdminToast(`❌ Borzo failed: ${errMsg}`);
+      showBorzoError(order, errMsg);
+      return null;
+    }
+
+  } catch(e) {
+    console.error('[Borzo] Network error:', e);
+    showAdminToast('❌ Borzo network error — check connection');
+    showBorzoError(order, 'Network error');
+    return null;
+  }
+}
+
+/** Poll Borzo for delivery status updates */
+async function borzoPollStatus(borzoOrderId, mmOrderId) {
+  if (!BORZO_TOKEN || !borzoOrderId) return;
+  try {
+    const resp = await fetch(`${BORZO_API}/order?order_id=${borzoOrderId}`, {
+      headers: { 'X-DV-Auth-Token': BORZO_TOKEN }
+    });
+    const data = await resp.json();
+    if (!data.is_successful) return;
+
+    const borzoStatus = data.order?.status;
+    /* Map Borzo status → your order status */
+    const statusMap = {
+      'active':    'out_for_delivery',
+      'completed': 'delivered',
+      'canceled':  'pending',  /* if Borzo cancels, back to pending */
+    };
+    if (borzoStatus && statusMap[borzoStatus]) {
+      const mmStatus = statusMap[borzoStatus];
+      const orders = getOrders();
+      const o = orders.find(x => x.id === mmOrderId);
+      if (o && o.status !== mmStatus) {
+        o.status = mmStatus;
+        saveOrders(orders);
+        if (currentSection === 'dashboard') renderDashboard();
+        if (currentSection === 'orders')    renderActiveOrders();
+        showAdminToast(`📦 Order ${mmOrderId}: ${mmStatus.replace('_',' ')}`);
+      }
+    }
+  } catch(e) { /* silent */ }
+}
+
+/** Show Borzo success bottom sheet */
+function showBorzoSuccess(orderId, borzoId, trackingUrl, price, order) {
+  const old = document.getElementById('borzoModal');
+  if (old) old.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'borzoModal';
+  modal.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;
+    display:flex;align-items:flex-end;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;
+  `;
+  modal.innerHTML = `
+    <div style="background:#1C1C27;border-radius:20px 20px 0 0;width:100%;max-width:440px;padding:24px 20px 36px">
+
+      <!-- Success header -->
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="width:64px;height:64px;background:rgba(72,196,121,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 12px">✅</div>
+        <div style="font-size:1.1rem;font-weight:900;color:#fff">Borzo Booked!</div>
+        <div style="font-size:.78rem;color:#6B6B8A;margin-top:4px">Delivery bike assigned · arrives in ~7 min</div>
+      </div>
+
+      <!-- Details -->
+      <div style="background:#13131A;border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:.76rem;color:#6B6B8A">Order ID</span>
+          <span style="font-size:.76rem;color:#fff;font-weight:700">#${orderId}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:.76rem;color:#6B6B8A">Borzo ID</span>
+          <span style="font-size:.76rem;color:#4A9EFF;font-weight:700">#${borzoId}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:.76rem;color:#6B6B8A">Delivery Fee</span>
+          <span style="font-size:.76rem;color:#FC8019;font-weight:700">₹${price}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:.76rem;color:#6B6B8A">Customer SMS</span>
+          <span style="font-size:.76rem;color:#48C479;font-weight:700">✅ Sent automatically</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${trackingUrl ? `
+        <a href="${trackingUrl}" target="_blank"
+           style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(74,158,255,.15);border:1px solid rgba(74,158,255,.3);border-radius:12px;padding:13px;text-decoration:none;font-weight:700;font-size:.88rem;color:#4A9EFF">
+          🗺️ Track Live Delivery
+        </a>` : ''}
+        <button onclick="document.getElementById('borzoModal').remove()"
+          style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;font-family:'Space Grotesk',sans-serif">
+          Close
+        </button>
+      </div>
+
+    </div>`;
+
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+
+  /* Start polling Borzo status every 2 minutes */
+  const pollInterval = setInterval(() => {
+    borzoPollStatus(borzoId, orderId);
+  }, 120000);
+
+  /* Stop polling after 2 hours */
+  setTimeout(() => clearInterval(pollInterval), 7200000);
+}
+
+/** Show error with fallback to manual */
+function showBorzoError(order, errMsg) {
+  const old = document.getElementById('borzoModal');
+  if (old) old.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'borzoModal';
+  modal.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;
+    display:flex;align-items:flex-end;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;
+  `;
+  modal.innerHTML = `
+    <div style="background:#1C1C27;border-radius:20px 20px 0 0;width:100%;max-width:440px;padding:24px 20px 36px">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:2rem;margin-bottom:8px">⚠️</div>
+        <div style="font-size:1rem;font-weight:800;color:#fff">Borzo Booking Failed</div>
+        <div style="font-size:.76rem;color:#E23744;margin-top:4px">${errMsg}</div>
+      </div>
+      <div style="background:#13131A;border-radius:12px;padding:12px;margin-bottom:14px;font-size:.76rem;color:#6B6B8A;line-height:1.6">
+        Possible reasons:<br>
+        • Address not recognized by Borzo<br>
+        • Borzo not available in that area<br>
+        • API token incorrect or expired<br>
+        • Test mode — switch BORZO_TEST to false
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button onclick="document.getElementById('borzoModal').remove();showRapidoModal(window._lastOrder)"
+          style="background:linear-gradient(135deg,#FFD700,#FFA500);border:none;border-radius:12px;padding:13px;color:#000;font-weight:800;font-size:.88rem;cursor:pointer;font-family:'Space Grotesk',sans-serif">
+          🛵 Book Rapido Manually Instead
+        </button>
+        <button onclick="document.getElementById('borzoModal').remove()"
+          style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px;color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;font-family:'Space Grotesk',sans-serif">
+          Cancel
+        </button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+}
+
+/* ── AUTO-BOOK: book Borzo automatically when order status = preparing ───── */
+async function autoBookBorzoIfConfigured(order) {
+  if (!BORZO_TOKEN) return;          /* skip if no token */
+  if (order.borzoOrderId) return;    /* already booked */
+  await borzoBookDelivery(order);
+}
+
+/* ── RAPIDO BOOKING ───────────────────────────────────────── */
+function bookRapido(order) {
+  const custAddr = order.customer.addr || '';
+  const custName = order.customer.name || '';
+  const custPhone= order.customer.phone|| '';
+  const items    = order.items.map(i => i.name + '×' + i.qty).join(', ');
+
+  /* Build Rapido deep link with pickup + drop pre-filled */
+  /* Rapido supports auto-filling via their URL scheme */
+  const pickup = encodeURIComponent(SHOP_ADDRESS);
+  const drop   = encodeURIComponent(custAddr);
+
+  /* Try Rapido app first (Android intent) */
+  const rapidoApp = `in.rapido.android://booking?pickup=${pickup}&drop=${drop}`;
+
+  /* Fallback: Rapido web with addresses in URL */
+  const rapidoWeb = `https://rapido.bike/book?pickup=${pickup}&drop=${drop}`;
+
+  /* Open in a way that tries app first, falls back to web */
+  const anchor = document.createElement('a');
+  anchor.href  = rapidoApp;
+  anchor.target = '_blank';
+  document.body.appendChild(anchor);
+  anchor.click();
+  setTimeout(() => anchor.remove(), 500);
+
+  /* After 2s if app didn't open, open web */
+  setTimeout(() => {
+    /* Show info modal with all details to copy */
+    showRapidoModal(order);
+  }, 1500);
+}
+
+/* Show Rapido details modal — easy copy for manual booking */
+function showRapidoModal(order) {
+  const custAddr  = order.customer.addr  || 'No address';
+  const custName  = order.customer.name  || '';
+  const custPhone = order.customer.phone || '';
+  const items     = order.items.map(i => i.name + '×' + i.qty).join(', ');
+  const amt       = order.total || 0;
+
+  /* Remove old modal if exists */
+  const old = document.getElementById('rapidoModal');
+  if (old) old.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'rapidoModal';
+  modal.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;
+    display:flex;align-items:flex-end;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;
+  `;
+
+  modal.innerHTML = `
+    <div style="background:#1C1C27;border-radius:20px 20px 0 0;width:100%;max-width:440px;padding:20px 20px 32px">
+
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:40px;height:40px;background:#FFD700;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem">🛵</div>
+          <div>
+            <div style="font-weight:800;font-size:1rem;color:#fff">Book Rapido</div>
+            <div style="font-size:.72rem;color:#6B6B8A">Order #${order.id}</div>
+          </div>
+        </div>
+        <button onclick="document.getElementById('rapidoModal').remove()"
+          style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:1.1rem;cursor:pointer">✕</button>
+      </div>
+
+      <!-- Pickup -->
+      <div style="background:#13131A;border-radius:12px;padding:12px 14px;margin-bottom:8px">
+        <div style="font-size:.65rem;font-weight:700;color:#FFD700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">📦 PICKUP</div>
+        <div style="font-size:.88rem;color:#fff;font-weight:700;margin-bottom:2px">${SHOP_NAME}</div>
+        <div style="font-size:.76rem;color:#6B6B8A;line-height:1.5">${SHOP_ADDRESS}</div>
+        <div style="font-size:.75rem;color:#4A9EFF;margin-top:4px">📞 ${SHOP_PHONE}</div>
+      </div>
+
+      <!-- Drop -->
+      <div style="background:#13131A;border-radius:12px;padding:12px 14px;margin-bottom:12px">
+        <div style="font-size:.65rem;font-weight:700;color:#FC8019;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">🏠 DROP</div>
+        <div style="font-size:.88rem;color:#fff;font-weight:700;margin-bottom:2px">${custName}</div>
+        <div style="font-size:.76rem;color:#6B6B8A;line-height:1.5">${custAddr}</div>
+        <div style="font-size:.75rem;color:#4A9EFF;margin-top:4px">📞 ${custPhone}</div>
+      </div>
+
+      <!-- Order details -->
+      <div style="background:#13131A;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:.76rem;color:#6B6B8A">
+        🛍 ${items}<br>
+        <span style="color:#FFD700;font-weight:700">₹${amt} collected via UPI</span>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display:flex;flex-direction:column;gap:8px">
+
+        <!-- Open Rapido app -->
+        <a href="https://rapido.bike" target="_blank"
+           style="display:flex;align-items:center;justify-content:center;gap:10px;background:#FFD700;border-radius:12px;padding:14px;text-decoration:none;font-weight:800;font-size:.92rem;color:#000">
+          🛵 Open Rapido App
+        </a>
+
+        <!-- Copy drop address -->
+        <button onclick="navigator.clipboard.writeText('${custAddr.replace(/'/g,"\\'")}').then(()=>showAdminToast('✅ Drop address copied!'))"
+          style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px;color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;font-family:'Space Grotesk',sans-serif">
+          📋 Copy Drop Address
+        </button>
+
+        <!-- Call customer -->
+        <a href="tel:${custPhone}"
+           style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.25);border-radius:12px;padding:12px;text-decoration:none;font-weight:700;font-size:.85rem;color:#4A9EFF">
+          📞 Call Customer: ${custPhone}
+        </a>
+
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  /* Close on backdrop click */
+  modal.addEventListener('click', e => {
+    if (e.target === modal) modal.remove();
+  });
+}
+
 function gpsButtons(order){
   const gps=order.gps;
-  if(!gps||!gps.lat)return`<span style="font-size:.72rem;color:var(--muted)">📍 No GPS</span>`;
-  const lat=gps.lat.toFixed(5),lng=gps.lng.toFixed(5);
-  const acc=gps.accuracy?Math.round(gps.accuracy)+'m':'';
-  const mapsUrl=`https://www.google.com/maps?q=${gps.lat},${gps.lng}`;
-  const navUrl=`https://www.google.com/maps/dir/?api=1&destination=${gps.lat},${gps.lng}`;
-  return`<div>
-    <div style="font-size:.68rem;color:var(--blue);font-family:monospace;margin-bottom:4px">📍 ${lat}, ${lng} ${acc?'±'+acc:''}</div>
-    <div class="gps-mini">
-      <a class="gps-btn gps-btn-map" href="${mapsUrl}" target="_blank">🗺️ Maps</a>
-      <a class="gps-btn gps-btn-nav" href="${navUrl}" target="_blank">🧭 Navigate</a>
-    </div>
-  </div>`;
+  const custAddr = order.customer?.addr || '';
+  let gpsHtml = '';
+
+  if(gps && gps.lat){
+    const lat=gps.lat.toFixed(5), lng=gps.lng.toFixed(5);
+    const acc=gps.accuracy ? Math.round(gps.accuracy)+'m' : '';
+    const mapsUrl=`https://www.google.com/maps?q=${gps.lat},${gps.lng}`;
+    const navUrl=`https://www.google.com/maps/dir/?api=1&origin=${SHOP_LAT_ADM},${SHOP_LNG_ADM}&destination=${gps.lat},${gps.lng}`;
+    gpsHtml = `
+      <div style="font-size:.68rem;color:var(--blue);font-family:monospace;margin-bottom:4px">
+        📍 ${lat}, ${lng} ${acc ? '±'+acc : ''}
+      </div>
+      <div class="gps-mini">
+        <a class="gps-btn gps-btn-map" href="${mapsUrl}" target="_blank">🗺️ Maps</a>
+        <a class="gps-btn gps-btn-nav" href="${navUrl}" target="_blank">🧭 Navigate</a>
+      </div>`;
+  } else {
+    gpsHtml = `<span style="font-size:.72rem;color:var(--muted)">📍 No GPS · ${custAddr.slice(0,30)}</span>`;
+  }
+
+  return `<div>${gpsHtml}</div>`;
 }
 
 /* ── ORDER CARD HTML (mobile-first card layout) ──────────── */
 function orderCardHTML(o){
   const time=new Date(o.placedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   const date=new Date(o.placedAt).toLocaleDateString([],{day:'numeric',month:'short'});
+  const orderId = JSON.stringify(o).replace(/'/g, "\\'");
   return`<div class="order-card-wrap">
     <div class="order-card-top">
       <div>
@@ -859,11 +1617,18 @@ function orderCardHTML(o){
     <div class="order-meta-row">
       <span>📞 ${o.customer.phone}</span>
       <span>💰 ₹${o.total}</span>
-      <span>💳 ${o.paymentMethod||'COD'}</span>
+      <span>💳 ${o.paymentMethod||'UPI'}</span>
       <span>🕐 ${time}, ${date}</span>
     </div>
     <div class="order-items-txt">🛍 ${o.items.map(i=>i.name+'×'+i.qty).join(' · ')}</div>
-    <div style="font-size:.74rem;color:var(--muted);margin-bottom:8px">📍 ${o.customer.addr}</div>
+    <div style="font-size:.74rem;color:var(--muted);margin-bottom:10px">📍 ${o.customer.addr}</div>
+
+    <!-- Borzo automatic delivery button -->
+    <button onclick='window._lastOrder=${JSON.stringify(o)};borzoBookDelivery(${JSON.stringify(o)})'
+      style="width:100%;padding:11px;background:linear-gradient(135deg,#00C853,#009624);border:none;border-radius:10px;color:#fff;font-weight:800;font-size:.84rem;cursor:pointer;font-family:'Space Grotesk',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;box-shadow:0 3px 12px rgba(0,200,83,.3)">
+      🛵 Auto Book Borzo Delivery
+    </button>
+
     <div class="order-card-actions">
       ${statusSelectHTML(o.id,o.status)}
       ${gpsButtons(o)}
@@ -889,7 +1654,6 @@ function showAdminToast(msg){
 /* ── SPA NAVIGATION ──────────────────────────────────────── */
 let currentSection='dashboard';
 function showSection(target){
-  if(target===currentSection)return;
   document.querySelectorAll('.admin-section').forEach(s=>{s.classList.remove('section-visible');s.style.display='none';});
   const el=document.getElementById('section-'+target);
   if(!el)return;
@@ -919,38 +1683,40 @@ function showSection(target){
 
 /* ── RENDERS ──────────────────────────────────────────────── */
 function renderDashboard(){
-  const all      = getOrders();
-  const active   = all.filter(o => o.status !== 'delivered' && o.status !== 'cancelled');
-  const pending  = active.filter(o => o.status === 'pending').length;
-  const delivered = all.filter(o => o.status === 'delivered').length;
+  const all     = getOrders();
+  const active  = all.filter(o => o.status !== 'delivered' && o.status !== 'cancelled');
+  const pending = active.filter(o => o.status === 'pending').length;
 
-  /* ── All-time revenue — never resets ──────────────────────
-     We accumulate revenue from every delivered order and store
-     it permanently in localStorage so it survives clearing history.
+  /* ── TODAY'S revenue — clears after midnight ────────────────
+     Uses YYYY-MM-DD as key so next day starts fresh at ₹0
   ────────────────────────────────────────────────────────── */
-  const todayRevenue = all
-    .filter(o => o.status === 'delivered')
-    .reduce((s, o) => s + (o.total || 0), 0);
+  const todayKey  = new Date().toISOString().slice(0, 10); /* "2026-04-13" */
+  const savedDay  = localStorage.getItem('mmRevenueDate');
 
-  /* Load previously saved cumulative total */
-  let savedTotal = parseInt(localStorage.getItem('mmTotalRevenue') || '0');
-
-  /* If current orders have more revenue than saved, update saved */
-  if (todayRevenue > savedTotal) {
-    savedTotal = todayRevenue;
-    localStorage.setItem('mmTotalRevenue', savedTotal);
+  /* If new day — reset today's counters */
+  if (savedDay !== todayKey) {
+    localStorage.setItem('mmRevenueDate',     todayKey);
+    localStorage.setItem('mmTodayRevenue',    '0');
+    localStorage.setItem('mmTodayDelivered',  '0');
   }
 
-  /* Use the higher of the two so revenue never goes down */
-  const displayRevenue = Math.max(savedTotal, todayRevenue);
+  /* Add any newly delivered orders from current session */
+  const todayDelivered = all.filter(o => {
+    if (o.status !== 'delivered') return false;
+    const d = (o.deliveredAt || o.placedAt || '').slice(0, 10);
+    return d === todayKey;
+  });
+  const todayRevenue   = todayDelivered.reduce((s, o) => s + (o.total || 0), 0);
+  const todayCount     = todayDelivered.length;
 
-  /* Count all-time delivered — saved separately */
-  let savedDelivered = parseInt(localStorage.getItem('mmTotalDelivered') || '0');
-  if (delivered > savedDelivered) {
-    savedDelivered = delivered;
-    localStorage.setItem('mmTotalDelivered', savedDelivered);
+  /* Persist so refreshing doesn't lose it */
+  if (todayRevenue > 0) {
+    localStorage.setItem('mmTodayRevenue',   todayRevenue);
+    localStorage.setItem('mmTodayDelivered', todayCount);
   }
-  const displayDelivered = Math.max(savedDelivered, delivered);
+
+  const displayRevenue   = parseInt(localStorage.getItem('mmTodayRevenue')   || '0');
+  const displayDelivered = parseInt(localStorage.getItem('mmTodayDelivered') || '0');
 
   document.getElementById('dashStats').innerHTML = `
     <div class="stat-card c-orange">
@@ -966,12 +1732,12 @@ function renderDashboard(){
     <div class="stat-card c-green">
       <div class="stat-icon">💰</div>
       <div class="stat-num">₹${displayRevenue}</div>
-      <div class="stat-label">Total Revenue</div>
+      <div class="stat-label">Today's Revenue</div>
     </div>
     <div class="stat-card c-blue">
       <div class="stat-icon">✅</div>
       <div class="stat-num">${displayDelivered}</div>
-      <div class="stat-label">All Delivered</div>
+      <div class="stat-label">Delivered Today</div>
     </div>`;
 
   const el = document.getElementById('dashOrderList');
@@ -1035,22 +1801,166 @@ function renderMenuMgmt(){
   document.getElementById('menuItemCount').textContent=items.length+' items';
   document.getElementById('menuGrid').innerHTML=items.map(item=>`
     <div class="mi-card">
-      <div class="mi-thumb" style="background:${CAT_COLORS[item.cat]||'#333'}22">${CAT_EMOJI[item.cat]||'🍽️'}</div>
+      <div class="mi-thumb" style="background:${CAT_COLORS[item.cat]||'#333'}22;position:relative;overflow:hidden">
+        ${item.imageData
+          ? `<img src="${item.imageData}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`
+          : `<span style="font-size:2rem">${CAT_EMOJI[item.cat]||'🍽️'}</span>`}
+      </div>
       <div class="mi-body">
         <div class="mi-name">${item.name} ${item.popular?'🔥':''}</div>
         <div class="mi-price">₹${item.price} <s style="color:var(--muted);font-size:.74rem">₹${item.mrp}</s></div>
         <div class="mi-cat">${item.cat}</div>
         <div class="mi-actions">
-          <button class="mi-btn mi-edit" onclick="alert('Edit: ${item.name.replace(/'/g,'&apos;')}')">Edit</button>
+          <button class="mi-btn mi-edit" onclick="openEditModal(${item.id})">✏️ Edit</button>
           <button class="mi-btn mi-del" onclick="deleteItem(${item.id})">Delete</button>
         </div>
       </div>
     </div>`).join('');
 }
+
 function deleteItem(id){
   if(!confirm('Delete this item?'))return;
   localStorage.setItem('mmCustomItems',JSON.stringify(getCustomItems().filter(i=>i.id!==id)));
   renderMenuMgmt();
+}
+
+function openEditModal(id) {
+  const all   = getAllItems();
+  const item  = all.find(i => i.id === id);
+  if (!item) return;
+
+  const old = document.getElementById('editItemModal');
+  if (old) old.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'editItemModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:flex-end;justify-content:center;font-family:Space Grotesk,sans-serif';
+  modal.innerHTML = `
+    <div style="background:#1C1C27;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:22px 20px 36px;max-height:90vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <div style="font-weight:800;font-size:1rem;color:#fff">✏️ Edit Item</div>
+        <button onclick="document.getElementById('editItemModal').remove()"
+          style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem">✕</button>
+      </div>
+
+      <!-- Image upload -->
+      <div style="margin-bottom:14px">
+        <label style="font-size:.72rem;font-weight:700;color:#6B6B8A;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px">Item Photo</label>
+        <div style="position:relative;width:100%;height:120px;background:#13131A;border:2px dashed #2A2A3D;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden"
+             onclick="document.getElementById('editImgInput').click()">
+          <img id="editImgPreview" src="${item.imageData||''}"
+               style="width:100%;height:100%;object-fit:cover;border-radius:10px;display:${item.imageData?'block':'none'}">
+          <div id="editImgPlaceholder" style="display:${item.imageData?'none':'flex'};flex-direction:column;align-items:center;gap:6px;color:#6B6B8A">
+            <span style="font-size:2rem">📷</span>
+            <span style="font-size:.78rem">Tap to add photo</span>
+          </div>
+        </div>
+        <input type="file" id="editImgInput" accept="image/*" style="display:none"
+               onchange="previewEditImage(this)">
+      </div>
+
+      <!-- Name -->
+      <div style="margin-bottom:12px">
+        <label style="font-size:.72rem;font-weight:700;color:#6B6B8A;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Item Name</label>
+        <input id="editName" value="${item.name}"
+          style="width:100%;background:#13131A;border:1px solid #2A2A3D;border-radius:8px;padding:10px 12px;color:#fff;font-family:Space Grotesk,sans-serif;font-size:.9rem;outline:none">
+      </div>
+
+      <!-- Price row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div>
+          <label style="font-size:.72rem;font-weight:700;color:#6B6B8A;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Your Price (₹)</label>
+          <input id="editPrice" type="number" value="${item.price}"
+            style="width:100%;background:#13131A;border:1px solid #2A2A3D;border-radius:8px;padding:10px 12px;color:#48C479;font-family:Space Grotesk,sans-serif;font-size:.9rem;font-weight:700;outline:none">
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:700;color:#6B6B8A;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">MRP / Zomato (₹)</label>
+          <input id="editMrp" type="number" value="${item.mrp}"
+            style="width:100%;background:#13131A;border:1px solid #2A2A3D;border-radius:8px;padding:10px 12px;color:#FC8019;font-family:Space Grotesk,sans-serif;font-size:.9rem;font-weight:700;outline:none">
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div style="margin-bottom:12px">
+        <label style="font-size:.72rem;font-weight:700;color:#6B6B8A;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Description</label>
+        <textarea id="editDesc" rows="2"
+          style="width:100%;background:#13131A;border:1px solid #2A2A3D;border-radius:8px;padding:10px 12px;color:#fff;font-family:Space Grotesk,sans-serif;font-size:.85rem;outline:none;resize:none">${item.desc||''}</textarea>
+      </div>
+
+      <!-- Popular toggle -->
+      <div style="display:flex;align-items:center;justify-content:space-between;background:#13131A;border-radius:10px;padding:10px 14px;margin-bottom:18px">
+        <span style="font-size:.85rem;color:#fff;font-weight:600">🔥 Mark as Popular</span>
+        <label style="position:relative;width:44px;height:24px;cursor:pointer">
+          <input type="checkbox" id="editPop" ${item.popular?'checked':''} style="opacity:0;width:0;height:0;position:absolute">
+          <span id="editPopTrack" style="position:absolute;inset:0;background:${item.popular?'#48C479':'#2A2A3D'};border-radius:24px;transition:.3s"></span>
+          <span id="editPopThumb" style="position:absolute;top:2px;left:${item.popular?'22':'2'}px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.3s"></span>
+        </label>
+      </div>
+
+      <!-- Save button -->
+      <button onclick="saveEditItem(${id})"
+        style="width:100%;padding:14px;background:linear-gradient(135deg,#4A9EFF,#0070F3);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:.92rem;cursor:pointer;font-family:Space Grotesk,sans-serif">
+        💾 Save Changes
+      </button>
+    </div>`;
+
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+
+  /* Wire popular toggle UI */
+  const popCb    = modal.querySelector('#editPop');
+  const popTrack = modal.querySelector('#editPopTrack');
+  const popThumb = modal.querySelector('#editPopThumb');
+  popCb.addEventListener('change', () => {
+    popTrack.style.background = popCb.checked ? '#48C479' : '#2A2A3D';
+    popThumb.style.left       = popCb.checked ? '22px'    : '2px';
+  });
+}
+
+function previewEditImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('editImgPreview');
+    const placeholder = document.getElementById('editImgPlaceholder');
+    if (preview)     { preview.src = e.target.result; preview.style.display = 'block'; }
+    if (placeholder)   placeholder.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveEditItem(id) {
+  const name  = document.getElementById('editName')?.value.trim();
+  const price = parseInt(document.getElementById('editPrice')?.value) || 60;
+  const mrp   = parseInt(document.getElementById('editMrp')?.value)   || 90;
+  const desc  = document.getElementById('editDesc')?.value.trim()     || '';
+  const pop   = document.getElementById('editPop')?.checked            || false;
+  const imgEl = document.getElementById('editImgPreview');
+  const imageData = imgEl?.src && imgEl.src.startsWith('data:') ? imgEl.src : null;
+
+  if (!name) { alert('Item name required'); return; }
+
+  /* Update in MENU_BASE (built-in items) or custom items */
+  const custom = getCustomItems();
+  const idx    = custom.findIndex(i => i.id === id);
+
+  if (idx >= 0) {
+    /* Custom item */
+    custom[idx] = { ...custom[idx], name, price, mrp, desc, popular: pop };
+    if (imageData) custom[idx].imageData = imageData;
+    localStorage.setItem('mmCustomItems', JSON.stringify(custom));
+  } else {
+    /* Built-in item — save override in custom storage */
+    const overrides = JSON.parse(localStorage.getItem('mmItemOverrides') || '{}');
+    overrides[id] = { name, price, mrp, desc, popular: pop };
+    if (imageData) overrides[id].imageData = imageData;
+    localStorage.setItem('mmItemOverrides', JSON.stringify(overrides));
+  }
+
+  document.getElementById('editItemModal')?.remove();
+  renderMenuMgmt();
+  showAdminToast('✅ "' + name + '" updated!');
 }
 function addItem(){
   const name=document.getElementById('newName').value.trim();
@@ -1110,38 +2020,45 @@ function adminLogin(){
   const uEl  = document.getElementById('aUser');
   const pEl  = document.getElementById('aPass');
   const btn  = document.getElementById('loginBtn');
-  if (!uEl || !pEl || !btn) return;
 
-  const u = (uEl.value || '').trim().toLowerCase();
-  const p = (pEl.value || '').trim();
+  const u = (uEl?.value || '').trim().toLowerCase();
+  const p = (pEl?.value || '').trim();
 
-  /* ── Validate ── */
   if (!u || !p) {
-    btn.textContent = '⚠️ Enter username & password';
-    btn.style.background = '#FC8019';
-    setTimeout(() => { btn.textContent = 'Login to Dashboard'; btn.style.background = ''; }, 2500);
+    if (btn) { btn.textContent = '⚠️ Enter username & password'; }
+    setTimeout(() => { if (btn) btn.textContent = 'Login to Dashboard'; }, 2000);
     return;
   }
 
-  const validUser = (u === 'mmchats' || u === 'admin');
-  const validPass = (p === '2810');
-
-  if (!validUser || !validPass) {
-    btn.textContent = '❌ Wrong credentials';
-    btn.style.background = '#E23744';
-    pEl.value = ''; pEl.focus();
-    setTimeout(() => { btn.textContent = 'Login to Dashboard'; btn.style.background = ''; }, 2500);
+  if (u !== 'mmchats' || p !== '2810') {
+    if (btn) {
+      btn.textContent = '❌ Wrong username or password';
+      btn.style.background = '#E23744';
+    }
+    if (pEl) pEl.value = '';
+    setTimeout(() => {
+      if (btn) { btn.textContent = 'Login to Dashboard'; btn.style.background = ''; }
+      pEl?.focus();
+    }, 2500);
     return;
   }
 
-  /* ── Correct — save and show dashboard ── */
-  btn.textContent = '✅ Logging in…';
+  /* ✅ Correct credentials */
+  if (btn) { btn.textContent = '✅ Logging in…'; btn.style.background = '#48C479'; }
   localStorage.setItem('mmAdminLoggedIn', 'yes');
-  showDashboard();
+
+  setTimeout(() => showDashboard(), 400);
 }
 
-/* ── SHOW DASHBOARD ──────────────────────────────────────── */
+function adminLogout(){
+  if (!confirm('Logout from admin panel?')) return;
+  localStorage.removeItem('mmAdminLoggedIn');
+  location.reload();
+}
 function showDashboard() {
+  /* Hide login screen */
+  const authEl = document.getElementById('adminAuth');
+  if (authEl) { authEl.style.display = 'none'; }
   /* Show all main UI elements */
   const mainEl    = document.getElementById('adminMain');
   const topBar    = document.getElementById('topBar');
@@ -1179,8 +2096,31 @@ function showDashboard() {
   }, 15000);
 }
 document.addEventListener('DOMContentLoaded', () => {
-  /* Show dashboard directly — no login needed */
-  showDashboard();
+  /* Stay logged in until explicit logout — check saved session */
+  if (localStorage.getItem('mmAdminLoggedIn') === 'yes') {
+    showDashboard();
+    return;
+  }
+
+  /* Wire login button — both click and touchend for mobile */
+  const loginBtn = document.getElementById('loginBtn');
+  if (loginBtn) {
+    loginBtn.addEventListener('click', adminLogin);
+    loginBtn.addEventListener('touchend', e => { e.preventDefault(); adminLogin(); });
+  }
+
+  /* Enter key on password field */
+  document.getElementById('aPass')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') adminLogin();
+  });
+
+  /* Enter on username → jump to password */
+  document.getElementById('aUser')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('aPass')?.focus();
+  });
+
+  /* Focus username on load */
+  setTimeout(() => document.getElementById('aUser')?.focus(), 300);
 
   /* Sidebar nav */
   document.getElementById('navMenu')?.addEventListener('click', e => {
@@ -1195,7 +2135,16 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* Action buttons */
-  document.getElementById('refreshBtn')?.addEventListener('click', renderDashboard);
+  document.getElementById('refreshBtn')?.addEventListener('click', async () => {
+    showAdminToast('🔄 Refreshing...');
+    await pullAndSync();
+    if (currentSection === 'dashboard') renderDashboard();
+    if (currentSection === 'orders')    renderActiveOrders();
+    if (currentSection === 'history')   renderHistory();
+    if (currentSection === 'menu')      renderMenuMgmt();
+    if (currentSection === 'revenue')   renderRevenue();
+    showAdminToast('✅ Refreshed!');
+  });
   document.getElementById('testOrderBtn')?.addEventListener('click', injectTestOrder);
   document.getElementById('addItemBtn')?.addEventListener('click', addItem);
   document.getElementById('testOrderBtnMobile')?.addEventListener('click', injectTestOrder);
@@ -1214,112 +2163,137 @@ document.addEventListener('DOMContentLoaded', () => {
    • When shop closes → customer sees full-screen popup
 ══════════════════════════════════════════════════════════════ */
 
-const SHOP_OPEN_H  = 16;  /* 4 PM  */
-const SHOP_OPEN_M  = 30;  /* :30   */
-const SHOP_CLOSE_H = 21;  /* 9 PM */
-const SHOP_CLOSE_M = 0;   /* :00   */
+/* ══════════════════════════════════════════════════════════════
+   SHOP STATUS SYSTEM — ZOMATO RESTAURANT PATTERN
+   ─────────────────────────────────────────────────────────────
+   Modes:
+   • auto          → follows 4:30–9:00 PM schedule
+   • manual_open   → forced open (outside hours)
+   • manual_closed → forced closed (holiday, etc.)
+   • holiday_until → closed until a specific date/time
+   
+   Quick actions (like Zomato):
+   ✅ Open Now     → open immediately
+   🔴 Close Now    → close immediately  
+   📅 Off Today    → closed for rest of today, auto-open tomorrow
+   🎉 Holiday      → choose days off
+══════════════════════════════════════════════════════════════ */
 
-/* shopMode: 'auto' | 'manual_open' | 'manual_closed' */
+const SHOP_OPEN_H  = 16;   /* 4 PM  */
+const SHOP_OPEN_M  = 30;   /* :30   */
+const SHOP_CLOSE_H = 21;   /* 9 PM  */
+const SHOP_CLOSE_M = 0;    /* :00   */
+
 let shopMode    = localStorage.getItem('mmShopMode')  || 'auto';
 let shopIsOpen  = true;
+let holidayUntil = parseInt(localStorage.getItem('mmHolidayUntil') || '0');
 
-/** Is it within shop hours right now? */
+/** Check if current time is within shop hours */
 function isWithinShopHours() {
   const now = new Date();
-  const h   = now.getHours();
-  const m   = now.getMinutes();
-  const cur = h * 60 + m;
-  const open  = SHOP_OPEN_H  * 60 + SHOP_OPEN_M;
-  const close = SHOP_CLOSE_H * 60 + SHOP_CLOSE_M;
-  return cur >= open && cur < close;
+  const cur = now.getHours() * 60 + now.getMinutes();
+  return cur >= (SHOP_OPEN_H * 60 + SHOP_OPEN_M) &&
+         cur <  (SHOP_CLOSE_H * 60 + SHOP_CLOSE_M);
 }
 
-/** Compute if shop should be open given current mode */
+/** Compute whether shop should be open right now */
 function computeShopOpen() {
+  /* Holiday override — closed until specific time */
+  if (shopMode === 'holiday_until' && holidayUntil > 0) {
+    if (Date.now() < holidayUntil) return false;
+    /* Holiday expired — restore auto */
+    shopMode = 'auto';
+    holidayUntil = 0;
+    localStorage.setItem('mmShopMode', 'auto');
+    localStorage.removeItem('mmHolidayUntil');
+  }
   if (shopMode === 'manual_open')   return true;
   if (shopMode === 'manual_closed') return false;
-  return isWithinShopHours();          /* auto */
+  return isWithinShopHours();
 }
 
-/** Push shop status to localStorage so customer panel can read it */
+/** Push status to Firebase + localStorage */
 async function broadcastShopStatus(isOpen) {
+  const myDeviceId = localStorage.getItem('mmDeviceId') || 'unknown';
   const status = {
     isOpen,
-    mode:      shopMode,
-    updatedAt: Date.now(),
-    openTime:  '4:30 PM',
-    closeTime: '10:00 PM',
+    mode:           shopMode,
+    holidayUntil:   holidayUntil || null,
+    updatedAt:      Date.now(),
+    openedByDevice: isOpen ? myDeviceId : null,
+    openTime:       '4:30 PM',
+    closeTime:      '9:00 PM',
   };
   localStorage.setItem('mmShopStatus', JSON.stringify(status));
-  /* Push to Firebase — customers will see within 5 seconds */
   try {
     await cloudPushShopStatus(status);
-    console.log('[Shop] Status pushed to Firebase:', isOpen ? 'OPEN' : 'CLOSED');
-  } catch(e) {
-    console.warn('[Shop] Firebase push failed, using localStorage only:', e);
-  }
+  } catch(e) {}
 }
 
-/** Update the toggle UI to reflect current state */
+/** Update all UI elements */
 function updateShopToggleUI(isOpen) {
   shopIsOpen = isOpen;
   const card    = document.getElementById('shopToggleCard');
   const badge   = document.getElementById('shopStatusBadge');
+  const dot     = document.getElementById('shopDot');
   const text    = document.getElementById('shopStatusText');
+  const sub     = document.getElementById('shopSubText');
   const sw      = document.getElementById('shopToggleSwitch');
-  const swMob   = document.getElementById('shopToggleSwitchMobile');
-  const mobTxt  = document.getElementById('mobileShopStatusText');
-  const note    = document.getElementById('shopManualNote');
+  const modeChip = document.getElementById('shopModeChip');
   const countdown = document.getElementById('shopCountdown');
+  if (!card) return;
 
-  /* Null-safe — elements may not exist yet if called before login */
-  if (!card) {
-    /* Still update the variable so state is correct */
-    if (sw)    sw.checked    = isOpen;
-    if (swMob) swMob.checked = isOpen;
-    return;
+  /* Card border colour */
+  card.className = isOpen ? 'shop-status-card is-open' : 'shop-status-card is-closed';
+
+  /* Dot */
+  if (dot) dot.className = isOpen ? 'shop-dot dot-open' : 'shop-dot dot-closed';
+
+  /* Status text */
+  if (text) text.textContent = isOpen ? 'Open' : 'Closed';
+
+  /* Toggle */
+  if (sw) sw.checked = isOpen;
+
+  /* Mode chip + subtitle */
+  if (shopMode === 'auto') {
+    if (modeChip) { modeChip.textContent = 'AUTO'; modeChip.className = 'shop-mode-chip chip-auto'; }
+    if (sub) sub.textContent = isOpen ? 'Auto schedule • closes 9:00 PM' : 'Auto schedule • opens 4:30 PM';
+  } else if (shopMode === 'manual_open') {
+    if (modeChip) { modeChip.textContent = 'MANUAL'; modeChip.className = 'shop-mode-chip chip-manual'; }
+    if (sub) sub.textContent = '⚠️ Manually kept open';
+  } else if (shopMode === 'manual_closed') {
+    if (modeChip) { modeChip.textContent = 'MANUAL'; modeChip.className = 'shop-mode-chip chip-manual'; }
+    if (sub) sub.textContent = '⚠️ Manually closed';
+  } else if (shopMode === 'holiday_until') {
+    if (modeChip) { modeChip.textContent = 'HOLIDAY'; modeChip.className = 'shop-mode-chip chip-holiday'; }
+    const reopenDate = new Date(holidayUntil);
+    const reopenStr  = reopenDate.toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short' });
+    if (sub) sub.textContent = `🎉 Holiday · Opens ${reopenStr}`;
   }
 
-  card.className = isOpen ? 'shop-toggle-card open-state' : 'shop-toggle-card closed-state';
-
-  if (badge) badge.className = isOpen
-    ? 'shop-status-badge shop-open-badge'
-    : 'shop-status-badge shop-closed-badge';
-
-  if (text)   text.textContent   = isOpen ? 'Open' : 'Closed';
-  if (sw)     sw.checked         = isOpen;
-  if (swMob)  swMob.checked      = isOpen;
-
-  if (mobTxt) {
-    mobTxt.textContent = isOpen ? 'OPEN' : 'CLOSED';
-    mobTxt.style.color = isOpen ? 'var(--green)' : 'var(--red)';
-  }
-
-  /* Note — null-safe */
-  if (note) {
-    if (shopMode === 'manual_open') {
-      note.textContent = '⚠️ Manually kept OPEN (outside auto hours)';
-      note.style.color = 'var(--orange)';
-    } else if (shopMode === 'manual_closed') {
-      note.textContent = '⚠️ Manually CLOSED (override active)';
-      note.style.color = 'var(--red)';
-    } else {
-      note.textContent = 'Auto mode: follows 4:30 PM – 9:00 PM schedule';
-      note.style.color = 'var(--muted)';
-    }
-  }
+  /* Highlight active quick-action button */
+  document.querySelectorAll('.shop-action-btn').forEach(b => b.classList.remove('selected'));
 
   updateCountdown(countdown);
 }
 
 function updateCountdown(el) {
   if (!el) return;
-  const now   = new Date();
-  const h = now.getHours(), m = now.getMinutes();
-  const cur   = h * 60 + m;
+  /* Show holiday countdown if on holiday */
+  if (shopMode === 'holiday_until' && holidayUntil > 0) {
+    const diff = holidayUntil - Date.now();
+    if (diff > 0) {
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      el.textContent = d > 0 ? `Holiday ends in ${d}d ${h}h` : `Opens in ${h}h`;
+      return;
+    }
+  }
+  const now  = new Date();
+  const cur  = now.getHours() * 60 + now.getMinutes();
   const open  = SHOP_OPEN_H  * 60 + SHOP_OPEN_M;
   const close = SHOP_CLOSE_H * 60 + SHOP_CLOSE_M;
-
   if (cur < open) {
     const diff = open - cur;
     el.textContent = `Opens in ${Math.floor(diff/60)}h ${diff%60}m`;
@@ -1331,69 +2305,216 @@ function updateCountdown(el) {
   }
 }
 
-/** Admin manually flips the toggle */
-function manualToggleShop(checked) {
-  const autoWouldBeOpen = isWithinShopHours();
+/* ── QUICK ACTIONS ──────────────────────────────────────── */
+function quickAction(action) {
+  switch(action) {
 
-  if (checked) {
-    /* Turning ON */
-    if (autoWouldBeOpen) {
-      shopMode = 'auto';       /* within hours → just restore auto */
-    } else {
-      shopMode = 'manual_open'; /* outside hours → force open */
-    }
-  } else {
-    /* Turning OFF */
-    if (!autoWouldBeOpen) {
-      shopMode = 'auto';         /* already outside hours → restore auto */
-    } else {
-      shopMode = 'manual_closed'; /* within hours → force close */
-    }
+    case 'open_now':
+      shopMode = isWithinShopHours() ? 'auto' : 'manual_open';
+      holidayUntil = 0;
+      localStorage.setItem('mmShopMode', shopMode);
+      localStorage.removeItem('mmHolidayUntil');
+      broadcastShopStatus(true);
+      updateShopToggleUI(true);
+      showAdminToast('✅ Shop is now OPEN');
+      break;
+
+    case 'close_now':
+      shopMode = 'manual_closed';
+      localStorage.setItem('mmShopMode', shopMode);
+      broadcastShopStatus(false);
+      updateShopToggleUI(false);
+      showAdminToast('🔴 Shop is now CLOSED');
+      break;
+
+    case 'close_today':
+      /* Close until tomorrow 4:30 PM */
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(SHOP_OPEN_H, SHOP_OPEN_M, 0, 0);
+      shopMode     = 'holiday_until';
+      holidayUntil = tomorrow.getTime();
+      localStorage.setItem('mmShopMode', shopMode);
+      localStorage.setItem('mmHolidayUntil', holidayUntil);
+      broadcastShopStatus(false);
+      updateShopToggleUI(false);
+      showAdminToast('📅 Shop closed for today · Opens tomorrow 4:30 PM');
+      break;
   }
-
-  localStorage.setItem('mmShopMode', shopMode);
-  const nowOpen = computeShopOpen();
-  broadcastShopStatus(nowOpen);
-  updateShopToggleUI(nowOpen);
-
-  /* Mobile sync */
-  const swMob = document.getElementById('shopToggleSwitchMobile');
-  if (swMob) swMob.checked = nowOpen;
-
-  showAdminToast(nowOpen
-    ? '✅ Shop is now OPEN — customers can order'
-    : '🔴 Shop is now CLOSED — customers will see popup'
-  );
 }
 
-/** Called every minute to auto-open/close based on time */
+/* ── HOLIDAY MODAL ──────────────────────────────────────── */
+function showHolidayModal() {
+  document.getElementById('shopHolidayModal').classList.add('show');
+}
+function closeHolidayModal() {
+  document.getElementById('shopHolidayModal').classList.remove('show');
+}
+
+function selectHoliday(option) {
+  const now = new Date();
+  let reopenTime;
+
+  switch(option) {
+    case 'tomorrow':
+      reopenTime = new Date(now);
+      reopenTime.setDate(reopenTime.getDate() + 1);
+      reopenTime.setHours(SHOP_OPEN_H, SHOP_OPEN_M, 0, 0);
+      break;
+    case '2days':
+      reopenTime = new Date(now);
+      reopenTime.setDate(reopenTime.getDate() + 2);
+      reopenTime.setHours(SHOP_OPEN_H, SHOP_OPEN_M, 0, 0);
+      break;
+    case 'week':
+      reopenTime = new Date(now);
+      reopenTime.setDate(reopenTime.getDate() + 7);
+      reopenTime.setHours(SHOP_OPEN_H, SHOP_OPEN_M, 0, 0);
+      break;
+    case 'indefinite':
+      reopenTime = new Date(now);
+      reopenTime.setFullYear(reopenTime.getFullYear() + 10); /* 10 years */
+      break;
+  }
+
+  shopMode     = 'holiday_until';
+  holidayUntil = reopenTime.getTime();
+  localStorage.setItem('mmShopMode', shopMode);
+  localStorage.setItem('mmHolidayUntil', holidayUntil);
+
+  broadcastShopStatus(false);
+  updateShopToggleUI(false);
+  closeHolidayModal();
+
+  const reopenStr = option === 'indefinite'
+    ? 'until manually opened'
+    : `on ${reopenTime.toLocaleDateString('en-IN', {weekday:'short', day:'numeric', month:'short'})} at 4:30 PM`;
+  showAdminToast(`🎉 Shop on Holiday · Reopens ${reopenStr}`);
+}
+
+/* ── MAIN TOGGLE (big switch) ───────────────────────────── */
+function manualToggleShop(checked) {
+  if (checked) {
+    quickAction('open_now');
+  } else {
+    quickAction('close_now');
+  }
+}
+
+/** Auto-check every 30s */
 function runShopAutoCheck() {
-  if (shopMode !== 'auto') return;  /* skip if manual override */
-  const nowOpen   = computeShopOpen();
+  /* Check if holiday expired */
+  if (shopMode === 'holiday_until' && holidayUntil > 0 && Date.now() >= holidayUntil) {
+    shopMode = 'auto';
+    holidayUntil = 0;
+    localStorage.setItem('mmShopMode', 'auto');
+    localStorage.removeItem('mmHolidayUntil');
+    showAdminToast('🟢 Holiday over — shop auto-opened!');
+  }
+  if (shopMode !== 'auto') {
+    updateCountdown(document.getElementById('shopCountdown'));
+    return;
+  }
+  const nowOpen = computeShopOpen();
   if (nowOpen !== shopIsOpen) {
     broadcastShopStatus(nowOpen);
     updateShopToggleUI(nowOpen);
-    showAdminToast(nowOpen
-      ? '🟢 Shop auto-opened (4:30 PM reached)'
-      : '🔴 Shop auto-closed (9:00 PM reached)'
-    );
+    showAdminToast(nowOpen ? '🟢 Shop auto-opened (4:30 PM)' : '🔴 Shop auto-closed (9:00 PM)');
   }
-  /* Update countdown every minute */
   updateCountdown(document.getElementById('shopCountdown'));
 }
 
-/** Initialise shop status on admin login */
+/** Initialise on admin load */
+
+/** Read shop status from Firebase — makes all phones consistent */
+async function syncShopStatusFromCloud() {
+  try {
+    if (FIREBASE_URL) {
+      const resp = await fetch(`${FIREBASE_URL}/mmchats/shopStatus.json`);
+      if (!resp.ok) return;
+      const cloudStatus = await resp.json();
+      if (!cloudStatus || !cloudStatus.updatedAt) return;
+
+      /* Only update if cloud is newer than local */
+      const localStatus = JSON.parse(localStorage.getItem('mmShopStatus') || '{}');
+      if (cloudStatus.updatedAt > (localStatus.updatedAt || 0)) {
+        /* Cloud is newer — update local state */
+        shopMode     = cloudStatus.mode || 'auto';
+        holidayUntil = cloudStatus.holidayUntil || 0;
+        localStorage.setItem('mmShopMode',     shopMode);
+        localStorage.setItem('mmHolidayUntil', holidayUntil);
+        localStorage.setItem('mmShopStatus',   JSON.stringify(cloudStatus));
+        updateShopToggleUI(cloudStatus.isOpen);
+      }
+    }
+  } catch(e) { /* silent */ }
+}
+
 function initShopStatus() {
-  shopMode    = localStorage.getItem('mmShopMode') || 'auto';
-  const isOpen = computeShopOpen();
-  /* Push current status to Firebase immediately on admin login */
-  broadcastShopStatus(isOpen);
-  updateShopToggleUI(isOpen);
-  /* Auto-check every 30 seconds */
+  shopMode     = localStorage.getItem('mmShopMode')    || 'auto';
+  holidayUntil = parseInt(localStorage.getItem('mmHolidayUntil') || '0');
+
+  /* ── FIRST: read shop status from Firebase ───────────────────
+     This makes ALL phones see the same status immediately.
+     Any phone that opens admin gets the latest status from cloud.
+  ────────────────────────────────────────────────────────── */
+  syncShopStatusFromCloud().then(() => {
+    const isOpen = computeShopOpen();
+    updateShopToggleUI(isOpen);
+  });
+
+  /* Request browser notification permission */
+  requestNotifPermission();
+
+  /* Poll cloud every 5 seconds so all phones stay in sync */
+  setInterval(syncShopStatusFromCloud, 5000);
+
   setInterval(runShopAutoCheck, 30000);
-  /* Update countdown every minute */
   setInterval(() => updateCountdown(document.getElementById('shopCountdown')), 60000);
-  console.log('[Shop] Status initialised:', isOpen ? 'OPEN' : 'CLOSED', '| Mode:', shopMode);
+
+  /* Auto-close when admin leaves */
+  /* Unique device ID so we know which device closed the shop */
+  if (!localStorage.getItem('mmDeviceId')) {
+    localStorage.setItem('mmDeviceId', 'dev_' + Math.random().toString(36).slice(2));
+  }
+  const myDeviceId = localStorage.getItem('mmDeviceId');
+
+  window.addEventListener('beforeunload', () => {
+    /* Only close shop if THIS device was the one that opened it */
+    const storedStatus = JSON.parse(localStorage.getItem('mmShopStatus') || '{}');
+    const openedByMe   = storedStatus.openedByDevice === myDeviceId;
+
+    if (openedByMe && (shopMode === 'auto' || shopMode === 'manual_open')) {
+      const s = {
+        isOpen: false, mode: 'manual_closed',
+        updatedAt: Date.now(), openedByDevice: null,
+        openTime: '4:30 PM', closeTime: '9:00 PM'
+      };
+      localStorage.setItem('mmShopStatus', JSON.stringify(s));
+      if (FIREBASE_URL) {
+        const blob = new Blob([JSON.stringify(s)], { type: 'application/json' });
+        navigator.sendBeacon && navigator.sendBeacon(`${FIREBASE_URL}/mmchats/shopStatus.json`, blob);
+      }
+    }
+  });
+
+  /* Auto-close after 5 min away (phone lock etc) */
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      window._awayTimer = setTimeout(() => {
+        if (shopMode === 'auto') {
+          broadcastShopStatus(false);
+          updateShopToggleUI(false);
+        }
+      }, 5 * 60 * 1000);
+    } else {
+      clearTimeout(window._awayTimer);
+      /* Re-check and reopen if needed */
+      const nowOpen = computeShopOpen();
+      broadcastShopStatus(nowOpen);
+      updateShopToggleUI(nowOpen);
+    }
+  });
 }
 
 </script>
