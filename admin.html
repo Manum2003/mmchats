@@ -367,6 +367,62 @@ tr:hover td{background:rgba(255,255,255,.02);}
   margin-top: 6px;
 }
 
+
+/* ── OUT OF STOCK ── */
+.mi-card.oos { opacity:.55; }
+.oos-toggle { display:flex;align-items:center;gap:6px;margin-top:6px; }
+.oos-label  { font-size:.68rem;font-weight:700;color:var(--muted); }
+.oos-pill   { padding:2px 8px;border-radius:20px;font-size:.65rem;font-weight:800;cursor:pointer;border:none;font-family:'Space Grotesk',sans-serif; }
+.oos-pill.in-stock  { background:rgba(72,196,121,.15);color:#48C479; }
+.oos-pill.out-stock { background:rgba(226,55,68,.15);color:#E23744; }
+
+/* ── OUT OF STOCK ─────────────────────────────────────────── */
+function outOfStock(id) {
+  const s = JSON.parse(localStorage.getItem('mmOutOfStock') || '{}');
+  return !!s[id];
+}
+function toggleStock(id, btn) {
+  const s = JSON.parse(localStorage.getItem('mmOutOfStock') || '{}');
+  const nowOOS = !s[id];
+  if (nowOOS) s[id] = true; else delete s[id];
+  localStorage.setItem('mmOutOfStock', JSON.stringify(s));
+  btn.textContent = nowOOS ? '❌ Out of Stock' : '✅ Available';
+  btn.className   = 'oos-pill ' + (nowOOS ? 'out-stock' : 'in-stock');
+  const card = btn.closest('.mi-card');
+  if (card) card.classList.toggle('oos', nowOOS);
+  showAdminToast(nowOOS ? '❌ Marked Out of Stock' : '✅ Marked Available');
+  /* Push to Firebase so customer panel knows */
+  pushStockStatus();
+}
+async function pushStockStatus() {
+  if (!FIREBASE_URL) return;
+  try {
+    const s = JSON.parse(localStorage.getItem('mmOutOfStock') || '{}');
+    await fetch(`${FIREBASE_URL}/mmchats/outOfStock.json`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(s),
+    });
+  } catch(e) {}
+}
+
+/* ── PREP TIMER ── */
+.prep-timer-wrap { display:flex;align-items:center;gap:5px;margin-top:6px;flex-wrap:wrap; }
+.prep-btn { padding:4px 9px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-size:.7rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:.15s; }
+.prep-btn.active { background:rgba(252,128,25,.15);border-color:var(--orange);color:var(--orange); }
+.prep-countdown { font-size:.72rem;font-weight:800;color:var(--orange);font-family:monospace;min-width:38px; }
+/* ── KOT ── */
+@media print {
+  body > *:not(#kotPrintArea) { display:none!important; }
+  #kotPrintArea { display:block!important; }
+}
+#kotPrintArea { display:none; font-family:monospace; padding:12px; color:#000; background:#fff; }
+/* ── RATINGS ── */
+.star-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:2px;line-height:1; }
+.star-btn.lit { filter:none; }
+.star-btn:not(.lit) { filter:grayscale(1) opacity(.35); }
+/* ── DISCOUNT ── */
+.discount-badge { display:inline-block;background:rgba(72,196,121,.15);color:#48C479;font-size:.65rem;font-weight:800;padding:2px 7px;border-radius:4px;margin-left:5px; }
+
 </style>
 </head>
 <body>
@@ -412,7 +468,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
       style="width:100%;padding:14px;background:linear-gradient(135deg,#E23744,#FC8019);border:none;border-radius:10px;color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">
       Login to Dashboard
     </button>
-    <p style="margin-top:12px;font-size:.74rem;color:#6B6B8A"></p>
+    <p style="margin-top:12px;font-size:.74rem;color:#6B6B8A">welcome</p>
   </div>
 </div>
 
@@ -471,6 +527,10 @@ tr:hover td{background:rgba(255,255,255,.02);}
     <button class="nav-item" data-target="revenue" onclick="showSection('revenue')">
       <span class="ic"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></span>
       Revenue
+    </button>
+    <button class="nav-item" data-target="settings" onclick="showSection('settings')">
+      <span class="ic"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></span>
+      Settings
     </button>
   </nav>
   <!-- Shop Status — Zomato Style -->
@@ -683,8 +743,80 @@ tr:hover td{background:rgba(255,255,255,.02);}
       <div class="rev-chart" id="revChart"></div>
     </div>
     <div class="s-card">
+      <div class="s-card-head"><h3>🏆 Top 5 Selling Items</h3></div>
+      <div style="padding:14px" id="topItemsWrap"></div>
+    </div>
+    <div class="s-card">
+      <div class="s-card-head"><h3>⭐ Customer Ratings</h3></div>
+      <div style="padding:14px" id="ratingsWrap"></div>
+    </div>
+    <div class="s-card">
       <div class="s-card-head"><h3>💸 Customer Savings vs Zomato/Swiggy</h3></div>
       <div style="padding:18px" id="savingsWrap"></div>
+    </div>
+  </section>
+
+
+  <!-- SETTINGS -->
+  <section class="admin-section" id="section-settings">
+    <div class="page-header"><div><h2>⚙️ Settings</h2><p>Offers, discounts, minimum order</p></div></div>
+
+    <!-- Minimum Order Amount -->
+    <div class="s-card" style="margin-bottom:14px">
+      <div class="s-card-head"><h3>🛒 Minimum Order Amount</h3></div>
+      <div style="padding:16px">
+        <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">Customer cannot checkout below this amount (excluding delivery).</p>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input id="minOrderInput" type="number" placeholder="e.g. 60" min="0"
+            style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:.9rem;outline:none">
+          <button onclick="saveMinOrder()"
+            style="padding:10px 18px;background:var(--orange);border:none;border-radius:8px;color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;font-family:'Space Grotesk',sans-serif">
+            Save
+          </button>
+        </div>
+        <p style="font-size:.76rem;color:var(--green);margin-top:8px" id="minOrderNote"></p>
+      </div>
+    </div>
+
+    <!-- Discount / Offers -->
+    <div class="s-card">
+      <div class="s-card-head"><h3>🏷️ Offers & Discounts</h3></div>
+      <div style="padding:16px">
+        <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px">Set an offer that applies automatically at checkout.</p>
+
+        <!-- Discount type -->
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button id="discTypeNone" onclick="setDiscType('none')"
+            style="flex:1;padding:9px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-weight:700;font-size:.8rem;cursor:pointer;font-family:'Space Grotesk',sans-serif">
+            No Offer
+          </button>
+          <button id="discTypePct" onclick="setDiscType('percent')"
+            style="flex:1;padding:9px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-weight:700;font-size:.8rem;cursor:pointer;font-family:'Space Grotesk',sans-serif">
+            % Off
+          </button>
+          <button id="discTypeFlat" onclick="setDiscType('flat')"
+            style="flex:1;padding:9px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-weight:700;font-size:.8rem;cursor:pointer;font-family:'Space Grotesk',sans-serif">
+            ₹ Flat Off
+          </button>
+        </div>
+
+        <div id="discValueWrap" style="display:none;margin-bottom:12px">
+          <label style="font-size:.76rem;font-weight:700;color:var(--muted);display:block;margin-bottom:5px">Discount Value</label>
+          <input id="discValueInput" type="number" min="1" placeholder="e.g. 10"
+            style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:.9rem;outline:none;box-sizing:border-box">
+        </div>
+        <div id="discMinWrap" style="display:none;margin-bottom:12px">
+          <label style="font-size:.76rem;font-weight:700;color:var(--muted);display:block;margin-bottom:5px">Min Order for Offer (₹)</label>
+          <input id="discMinInput" type="number" min="0" placeholder="e.g. 120 (leave 0 for always)"
+            style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:.9rem;outline:none;box-sizing:border-box">
+        </div>
+
+        <button onclick="saveDiscount()"
+          style="width:100%;padding:12px;background:var(--green);border:none;border-radius:10px;color:#000;font-weight:800;font-size:.88rem;cursor:pointer;font-family:'Space Grotesk',sans-serif">
+          💾 Save Offer
+        </button>
+        <div id="discNote" style="font-size:.76rem;margin-top:10px;color:var(--green)"></div>
+      </div>
     </div>
   </section>
 
@@ -775,7 +907,7 @@ const FIREBASE_URL = 'https://mmchats-34fc1-default-rtdb.firebaseio.com';
    Step 3: Paste token below ↓
    Step 4: Set BORZO_TEST = false when ready for live bookings
 ══════════════════════════════════════════════════════════════ */
-const BORZO_TOKEN = 'BB2361108289B42E0BB04FF22A02D666BA3691EE';       /* ← paste your Borzo API token here */
+const BORZO_TOKEN = '';       /* ← paste your Borzo API token here */
 const BORZO_TEST  = true;     /* true = test mode | false = live bookings */
 const BORZO_API   = BORZO_TEST
   ? 'https://robotapitest-in.borzodelivery.com/api/business/1.6'
@@ -794,15 +926,13 @@ const USE_JSONBIN  = !!JSONBIN_URL && !USE_FIREBASE;
 async function cloudPullAdmin() {
   try {
     if (USE_FIREBASE) {
-      const resp = await fetch(`${FIREBASE_URL}/mmchats.json`);
+      const resp = await fetch(`${FIREBASE_URL}/mmchats/orders.json`);
+      if (!resp.ok) return null;
       const data = await resp.json();
-      return data?.orders || null;
-    } else if (USE_JSONBIN) {
-      const resp = await fetch(JSONBIN_URL + '/latest', {
-        headers: { 'X-Master-Key': JSONBIN_KEY }
-      });
-      const data = await resp.json();
-      return data?.record?.orders || null;
+      if (!data) return [];
+      /* Firebase stores as object {id: orderObj} — convert to array */
+      if (Array.isArray(data)) return data;
+      return Object.values(data);
     }
     return null;
   } catch(e) { return null; }
@@ -810,24 +940,28 @@ async function cloudPullAdmin() {
 
 /* Push updated orders to cloud */
 async function cloudPushAdmin(ordersArr) {
+  if (!USE_FIREBASE) return;
   try {
-    if (USE_FIREBASE) {
-      await fetch(`${FIREBASE_URL}/mmchats.json`, {
-        method:  'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ orders: ordersArr }),
-      });
-    } else if (USE_JSONBIN) {
-      await fetch(JSONBIN_URL, {
-        method:  'PUT',
-        headers: {
-          'Content-Type':    'application/json',
-          'X-Master-Key':    JSONBIN_KEY,
-          'X-Bin-Versioning':'false',
-        },
-        body: JSON.stringify({ orders: ordersArr }),
-      });
-    }
+    /* Write all orders as a keyed object — no overwrites */
+    const obj = {};
+    ordersArr.forEach(o => { obj[o.id] = o; });
+    await fetch(`${FIREBASE_URL}/mmchats/orders.json`, {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(obj),
+    });
+  } catch(e) { /* silent */ }
+}
+
+/* Push a single order update — faster than pushing all */
+async function cloudPushOneOrder(order) {
+  if (!USE_FIREBASE || !order?.id) return;
+  try {
+    await fetch(`${FIREBASE_URL}/mmchats/orders/${order.id}.json`, {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(order),
+    });
   } catch(e) { /* silent */ }
 }
 
@@ -856,13 +990,39 @@ async function cloudPushShopStatus(statusObj) {
   } catch(e) {}
 }
 
+/* ══════════════════════════════════════════════════════════════
+   ORDER STORAGE — FIREBASE IS MASTER, localStorage IS CACHE
+   ─────────────────────────────────────────────────────────────
+   All devices read from Firebase every 3 seconds.
+   Any change (status update, new order) pushes to Firebase.
+   localStorage is only used for instant UI render.
+   This means ALL devices always see the SAME data.
+══════════════════════════════════════════════════════════════ */
+let _ordersCache = [];   /* in-memory master cache */
+
 function getOrders() {
-  return JSON.parse(localStorage.getItem('mmorders')||'[]');
+  return _ordersCache;
 }
-function saveOrders(a) {
-  localStorage.setItem('mmorders', JSON.stringify(a));
-  cloudPushAdmin(a);  /* always sync to cloud when admin saves */
+
+function saveOrders(arr, changedOrderId) {
+  _ordersCache = arr;
+  try { localStorage.setItem('mmorders', JSON.stringify(arr)); } catch(e) {}
+  if (changedOrderId) {
+    /* Fast: push only the changed order */
+    const o = arr.find(x => x.id === changedOrderId);
+    if (o) cloudPushOneOrder(o);
+  } else {
+    /* Full push */
+    cloudPushAdmin(arr);
+  }
 }
+
+/* Load initial cache from localStorage for instant render */
+try {
+  const local = JSON.parse(localStorage.getItem('mmorders') || '[]');
+  if (local.length) _ordersCache = local;
+} catch(e) {}
+
 function getUsers()       { return JSON.parse(localStorage.getItem('mmusers')||'[]'); }
 function getCustomItems() { return JSON.parse(localStorage.getItem('mmCustomItems')||'[]'); }
 function getAllItems() {
@@ -875,8 +1035,8 @@ function getAllItems() {
 }
 
 /* Active = pending/preparing/out_for_delivery  |  History = delivered */
-function getActiveOrders()  { return getOrders().filter(o=>o.status!=='delivered'); }
-function getHistoryOrders() { return getOrders().filter(o=>o.status==='delivered'); }
+function getActiveOrders()  { return _ordersCache.filter(o=>o.status!=='delivered'&&o.status!=='cancelled'); }
+function getHistoryOrders() { return _ordersCache.filter(o=>o.status==='delivered'); }
 
 /* ── SOUND ─────────────────────────────────────────────── */
 let audioCtx=null, soundEnabled=true;
@@ -942,7 +1102,7 @@ let bannerTimer=null;
 ══════════════════════════════════════════════════════════════ */
 
 const CALLMEBOT_PHONE  = '918618752739';  /* 91 + your WhatsApp number */
-const CALLMEBOT_APIKEY = '8618752739';           /* ← paste your CallMeBot APIKEY here */
+const CALLMEBOT_APIKEY = '';              /* ← paste your CallMeBot APIKEY here */
 
 /** Send automatic WhatsApp message via CallMeBot */
 async function sendWhatsAppAuto(message) {
@@ -1045,59 +1205,85 @@ function stopOrderSound(){
 }
 
 /* ── POLLING ─────────────────────────────────────────────── */
-let lastKnownIds=new Set();
-function initPolling(){
-  /* Seed known IDs so existing orders don't trigger false alerts */
-  getOrders().forEach(o => lastKnownIds.add(o.id));
+let lastKnownIds = new Set();
 
-  /* Pull cloud immediately on login — don't wait 5s */
+function initPolling(){
+  /* Seed known IDs from initial cache */
+  _ordersCache.forEach(o => lastKnownIds.add(o.id));
+
+  /* Pull from Firebase immediately */
   pullAndSync();
 
-  /* Then poll every 5 seconds */
-  setInterval(pullAndSync, 5000);
+  /* Poll every 3 seconds — fast enough for real-time feel */
+  setInterval(pullAndSync, 3000);
 }
 
 async function pullAndSync() {
-  /* ── Try cloud first (cross-device) ── */
-  const cloudOrders = await cloudPullAdmin();
-  const local = getOrders();
-  let hadNew = false;
+  const firebaseOrders = await cloudPullAdmin();
 
-  if (cloudOrders && cloudOrders.length > 0) {
-    cloudOrders.forEach(co => {
-      if (!lastKnownIds.has(co.id)) {
-        /* Brand new order from a customer on another device */
-        lastKnownIds.add(co.id);
-        if (!local.find(lo => lo.id === co.id)) local.unshift(co);
-        showNewOrderBanner(co);
+  if (firebaseOrders !== null) {
+    /* Firebase returned data — use it as master */
+    let hadNew = false;
+
+    firebaseOrders.forEach(fo => {
+      if (!lastKnownIds.has(fo.id)) {
+        /* Brand new order — alert! */
+        lastKnownIds.add(fo.id);
         hadNew = true;
-      } else {
-        /* Order exists — sync its status */
-        const lo = local.find(o => o.id === co.id);
-        if (lo && lo.status !== co.status) lo.status = co.status;
+        showNewOrderBanner(fo);
+        notifyNewOrder(fo);
       }
     });
-    localStorage.setItem('mmorders', JSON.stringify(local));
+
+    /* Replace cache entirely with Firebase data */
+    _ordersCache = firebaseOrders;
+
+    /* Update localStorage cache for offline fallback */
+    try { localStorage.setItem('mmorders', JSON.stringify(_ordersCache)); } catch(e) {}
+
+    /* Also update today's revenue from Firebase orders */
+    updateTodayRevenue();
+
+    /* Re-render current view */
+    if (currentSection === 'dashboard') renderDashboard();
+    if (currentSection === 'orders')    renderActiveOrders();
+    if (currentSection === 'history')   renderHistory();
+    updatePendingBadge();
+
   } else {
-    /* No cloud / JSONBin not configured — check localStorage */
-    const storedOrders = JSON.parse(localStorage.getItem('mmorders') || '[]');
-    storedOrders.forEach(o => {
+    /* Firebase unreachable — use localStorage cache as fallback */
+    const stored = JSON.parse(localStorage.getItem('mmorders') || '[]');
+    stored.forEach(o => {
       if (!lastKnownIds.has(o.id)) {
         lastKnownIds.add(o.id);
         showNewOrderBanner(o);
-        hadNew = true;
       }
     });
+    if (stored.length && !_ordersCache.length) {
+      _ordersCache = stored;
+      if (currentSection === 'dashboard') renderDashboard();
+      updatePendingBadge();
+    }
   }
+}
 
-  if (hadNew) {
-    if (currentSection==='dashboard') renderDashboard();
-    if (currentSection==='orders')    renderActiveOrders();
-    updatePendingBadge();
-  } else {
-    if (currentSection==='dashboard') renderDashboard();
-    updatePendingBadge();
+/** Recalculate today's revenue from current orders cache */
+function updateTodayRevenue() {
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const savedDay = localStorage.getItem('mmRevenueDate');
+  if (savedDay !== todayKey) {
+    localStorage.setItem('mmRevenueDate',    todayKey);
+    localStorage.setItem('mmTodayRevenue',   '0');
+    localStorage.setItem('mmTodayDelivered', '0');
   }
+  const todayDelivered = _ordersCache.filter(o => {
+    if (o.status !== 'delivered') return false;
+    const d = (o.deliveredAt || o.placedAt || '').slice(0, 10);
+    return d === todayKey;
+  });
+  const rev = todayDelivered.reduce((s, o) => s + (o.total || 0), 0);
+  localStorage.setItem('mmTodayRevenue',   rev);
+  localStorage.setItem('mmTodayDelivered', todayDelivered.length);
 }
 
 /* ── STATUS UPDATE with AUTO-CLEAR ──────────────────────── */
@@ -1123,7 +1309,7 @@ function updateStatus(status,orderId){
   if (status === 'preparing') {
     setTimeout(() => autoBookBorzoIfConfigured(o), 800);
   }
-    saveOrders(orders);
+    saveOrders(orders, orderId);
   }
   updatePendingBadge();
   /* Refresh current view */
@@ -1166,7 +1352,7 @@ function cancelOrder(orderId) {
   if (!o) return;
   o.status      = 'cancelled';
   o.cancelledAt = new Date().toISOString();
-  saveOrders(orders);
+  saveOrders(orders, orderId);
   updatePendingBadge();
   stopOrderSound();
   if (currentSection === 'dashboard') renderDashboard();
@@ -1617,6 +1803,45 @@ function gpsButtons(order){
   return `<div>${gpsHtml}</div>`;
 }
 
+
+/* ── PREP TIMER ───────────────────────────────────────────── */
+const _prepTimers = {}; /* { orderId: { mins, startedAt, intervalId } } */
+
+function startPrepTimer(orderId, mins) {
+  /* Clear old timer if any */
+  if (_prepTimers[orderId]) {
+    clearInterval(_prepTimers[orderId].intervalId);
+  }
+  const startedAt = Date.now();
+  const endAt     = startedAt + mins * 60 * 1000;
+  _prepTimers[orderId] = { mins, startedAt, endAt };
+
+  function tick() {
+    const remaining = endAt - Date.now();
+    const el = document.getElementById('ptimer_' + orderId);
+    if (!el) { clearInterval(_prepTimers[orderId]?.intervalId); return; }
+    if (remaining <= 0) {
+      el.textContent = '⏰ Done!';
+      el.style.color = '#48C479';
+      clearInterval(_prepTimers[orderId].intervalId);
+      showAdminToast('⏰ Order #' + orderId + ' prep time done!');
+      return;
+    }
+    const m = Math.floor(remaining / 60000);
+    const s = Math.floor((remaining % 60000) / 1000);
+    el.textContent = m + ':' + String(s).padStart(2,'0');
+  }
+  tick();
+  _prepTimers[orderId].intervalId = setInterval(tick, 1000);
+
+  /* Highlight active button */
+  [10,20,30].forEach(t => {
+    const btn = document.getElementById('pbtn_' + orderId + '_' + t);
+    if (btn) btn.classList.toggle('active', t === mins);
+  });
+  showAdminToast('⏱ Timer set: ' + mins + ' min for order #' + orderId);
+}
+
 /* ── ORDER CARD HTML (mobile-first card layout) ──────────── */
 function orderCardHTML(o){
   const time=new Date(o.placedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
@@ -1639,12 +1864,25 @@ function orderCardHTML(o){
     <div class="order-items-txt">🛍 ${o.items.map(i=>i.name+'×'+i.qty).join(' · ')}</div>
     <div style="font-size:.74rem;color:var(--muted);margin-bottom:10px">📍 ${o.customer.addr}</div>
 
+    <!-- KOT Print button -->
+    <button onclick='printKOT(${JSON.stringify(o)})'
+      style="width:100%;padding:9px;background:rgba(74,158,255,.12);border:1px solid rgba(74,158,255,.3);border-radius:10px;color:#4A9EFF;font-weight:800;font-size:.8rem;cursor:pointer;font-family:'Space Grotesk',sans-serif;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:8px">
+      🖨️ Print KOT
+    </button>
+
     <!-- Borzo automatic delivery button -->
     <button onclick='window._lastOrder=${JSON.stringify(o)};borzoBookDelivery(${JSON.stringify(o)})'
       style="width:100%;padding:11px;background:linear-gradient(135deg,#00C853,#009624);border:none;border-radius:10px;color:#fff;font-weight:800;font-size:.84rem;cursor:pointer;font-family:'Space Grotesk',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;box-shadow:0 3px 12px rgba(0,200,83,.3)">
       🛵 Auto Book Borzo Delivery
     </button>
 
+    <!-- Prep Timer -->
+    <div class="prep-timer-wrap">
+      <span style="font-size:.72rem;font-weight:700;color:var(--muted)">⏱ Prep:</span>
+      ${[10,20,30].map(t=>`<button class="prep-btn" id="pbtn_${o.id}_${t}"
+        onclick="startPrepTimer('${o.id}',${t})">${t}m</button>`).join('')}
+      <span class="prep-countdown" id="ptimer_${o.id}">--:--</span>
+    </div>
     <div class="order-card-actions">
       ${statusSelectHTML(o.id,o.status)}
       ${gpsButtons(o)}
@@ -1656,6 +1894,42 @@ function updatePendingBadge(){
   const cnt=getActiveOrders().length;
   const badge=document.getElementById('pendingBadge');
   if(badge){badge.textContent=cnt;badge.classList.toggle('show',cnt>0);}
+}
+
+
+/* ── KOT PRINT ─────────────────────────────────────────────── */
+function printKOT(order) {
+  const now   = new Date().toLocaleString('en-IN');
+  const items = order.items.map(i =>
+    `<tr><td style="padding:3px 0">${i.name}</td><td style="text-align:right;padding:3px 0">${i.qty}</td><td style="text-align:right;padding:3px 0">₹${i.price*i.qty}</td></tr>`
+  ).join('');
+  const total = order.total || order.items.reduce((s,i)=>s+i.price*i.qty,0);
+
+  document.getElementById('kotContent').innerHTML = `
+    <div style="text-align:center;border-bottom:2px dashed #000;padding-bottom:8px;margin-bottom:8px">
+      <h2 style="margin:0;font-size:1.2rem">MM CHATS CENTER</h2>
+      <p style="margin:2px 0;font-size:.8rem">Global Village Back Gate, Kengeri</p>
+      <p style="margin:2px 0;font-size:.8rem">📞 8618752739</p>
+    </div>
+    <p style="margin:4px 0;font-size:.85rem"><b>KOT #${order.id}</b></p>
+    <p style="margin:2px 0;font-size:.8rem">Customer: ${order.customer.name}</p>
+    <p style="margin:2px 0;font-size:.8rem">Phone: ${order.customer.phone}</p>
+    <p style="margin:2px 0;font-size:.8rem">Address: ${order.customer.addr}</p>
+    <p style="margin:2px 0;font-size:.8rem">Time: ${now}</p>
+    <hr style="border:1px dashed #000;margin:8px 0">
+    <table style="width:100%;font-size:.85rem;border-collapse:collapse">
+      <tr style="border-bottom:1px dashed #000">
+        <th style="text-align:left;padding:3px 0">Item</th>
+        <th style="text-align:right;padding:3px 0">Qty</th>
+        <th style="text-align:right;padding:3px 0">Amt</th>
+      </tr>
+      ${items}
+    </table>
+    <hr style="border:1px dashed #000;margin:8px 0">
+    <p style="text-align:right;font-size:.9rem"><b>Total: ₹${total}</b></p>
+    <p style="text-align:center;font-size:.75rem;margin-top:8px">Thank you! Visit Again 🙏</p>
+  `;
+  window.print();
 }
 
 /* ── ADMIN TOAST ─────────────────────────────────────────── */
@@ -1694,45 +1968,26 @@ function showSection(target){
     case 'menu':      renderMenuMgmt();     break;
     case 'users':     renderUsers();        break;
     case 'revenue':   renderRevenue();      break;
+    case 'settings':  initSettings();       break;
   }
 }
 
 /* ── RENDERS ──────────────────────────────────────────────── */
 function renderDashboard(){
-  const all     = getOrders();
+  /* Always use the live Firebase cache — same on ALL devices */
+  const all     = _ordersCache;
   const active  = all.filter(o => o.status !== 'delivered' && o.status !== 'cancelled');
   const pending = active.filter(o => o.status === 'pending').length;
 
-  /* ── TODAY'S revenue — clears after midnight ────────────────
-     Uses YYYY-MM-DD as key so next day starts fresh at ₹0
-  ────────────────────────────────────────────────────────── */
-  const todayKey  = new Date().toISOString().slice(0, 10); /* "2026-04-13" */
-  const savedDay  = localStorage.getItem('mmRevenueDate');
-
-  /* If new day — reset today's counters */
-  if (savedDay !== todayKey) {
-    localStorage.setItem('mmRevenueDate',     todayKey);
-    localStorage.setItem('mmTodayRevenue',    '0');
-    localStorage.setItem('mmTodayDelivered',  '0');
-  }
-
-  /* Add any newly delivered orders from current session */
+  /* Today's revenue — calculated live from Firebase orders */
+  const todayKey = new Date().toISOString().slice(0, 10);
   const todayDelivered = all.filter(o => {
     if (o.status !== 'delivered') return false;
     const d = (o.deliveredAt || o.placedAt || '').slice(0, 10);
     return d === todayKey;
   });
-  const todayRevenue   = todayDelivered.reduce((s, o) => s + (o.total || 0), 0);
-  const todayCount     = todayDelivered.length;
-
-  /* Persist so refreshing doesn't lose it */
-  if (todayRevenue > 0) {
-    localStorage.setItem('mmTodayRevenue',   todayRevenue);
-    localStorage.setItem('mmTodayDelivered', todayCount);
-  }
-
-  const displayRevenue   = parseInt(localStorage.getItem('mmTodayRevenue')   || '0');
-  const displayDelivered = parseInt(localStorage.getItem('mmTodayDelivered') || '0');
+  const todayRevenue = todayDelivered.reduce((s, o) => s + (o.total || 0), 0);
+  const todayCount   = todayDelivered.length;
 
   document.getElementById('dashStats').innerHTML = `
     <div class="stat-card c-orange">
@@ -1747,12 +2002,12 @@ function renderDashboard(){
     </div>
     <div class="stat-card c-green">
       <div class="stat-icon">💰</div>
-      <div class="stat-num">₹${displayRevenue}</div>
+      <div class="stat-num">₹${todayRevenue}</div>
       <div class="stat-label">Today's Revenue</div>
     </div>
     <div class="stat-card c-blue">
       <div class="stat-icon">✅</div>
-      <div class="stat-num">${displayDelivered}</div>
+      <div class="stat-num">${todayCount}</div>
       <div class="stat-label">Delivered Today</div>
     </div>`;
 
@@ -1829,6 +2084,13 @@ function renderMenuMgmt(){
         <div class="mi-actions">
           <button class="mi-btn mi-edit" onclick="openEditModal(${item.id})">✏️ Edit</button>
           <button class="mi-btn mi-del" onclick="deleteItem(${item.id})">Delete</button>
+        </div>
+        <div class="oos-toggle">
+          <span class="oos-label">Stock:</span>
+          <button class="oos-pill ${outOfStock(item.id)?'out-stock':'in-stock'}"
+            onclick="toggleStock(${item.id},this)">
+            ${outOfStock(item.id)?'❌ Out of Stock':'✅ Available'}
+          </button>
         </div>
       </div>
     </div>`).join('');
@@ -2008,12 +2270,145 @@ function renderRevenue(){
   const catLabels={belpuri:'🍱 Belpuri',sev:'🫓 Sev Puri',bun:'🍔 Bun',masala:'🌶 Masala',slice:'🍍 Slices',sprouts:'🌱 Healthy'};
   const catClrs={belpuri:'#E23744',sev:'#FC8019',bun:'#FFD700',masala:'#48C479',slice:'#4A9EFF',sprouts:'#A78BFA'};
   document.getElementById('revChart').innerHTML=Object.entries(catRev).map(([k,v])=>`<div class="rev-row"><div class="rev-label">${catLabels[k]||k}</div><div class="rev-track"><div class="rev-bar" style="width:${((v/maxVal)*100)||3}%;background:${catClrs[k]||'#888'}">${v>0?'₹'+v:''}</div></div><div class="rev-val">₹${v}</div></div>`).join('');
+  /* ── Top 5 Selling Items ── */
+  const itemSales = {};
+  orders.forEach(o => o.items.forEach(i => {
+    itemSales[i.name] = (itemSales[i.name] || 0) + i.qty;
+  }));
+  const top5 = Object.entries(itemSales)
+    .sort((a,b) => b[1]-a[1]).slice(0,5);
+  const topEl = document.getElementById('topItemsWrap');
+  if (topEl) {
+    if (!top5.length) {
+      topEl.innerHTML = '<p style="color:var(--muted);font-size:.84rem">No orders yet</p>';
+    } else {
+      const maxQ = top5[0][1] || 1;
+      topEl.innerHTML = top5.map(([name,qty],i) => `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="font-size:1.1rem;width:24px;text-align:center">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]}</div>
+          <div style="flex:1">
+            <div style="font-size:.84rem;font-weight:700;color:var(--text)">${name}</div>
+            <div style="height:6px;background:var(--border);border-radius:3px;margin-top:4px">
+              <div style="height:6px;background:var(--orange);border-radius:3px;width:${(qty/maxQ*100).toFixed(0)}%;transition:.5s"></div>
+            </div>
+          </div>
+          <div style="font-size:.84rem;font-weight:800;color:var(--orange);min-width:40px;text-align:right">${qty} sold</div>
+        </div>`).join('');
+    }
+  }
+
+  /* ── Customer Ratings ── */
+  const rated = orders.filter(o => o.rating);
+  const ratingsEl = document.getElementById('ratingsWrap');
+  if (ratingsEl) {
+    if (!rated.length) {
+      ratingsEl.innerHTML = '<p style="color:var(--muted);font-size:.84rem">No ratings yet</p>';
+    } else {
+      const avg = (rated.reduce((s,o)=>s+(o.rating||0),0)/rated.length).toFixed(1);
+      const dist = [5,4,3,2,1].map(r => ({r, count: rated.filter(o=>o.rating===r).length}));
+      ratingsEl.innerHTML = `
+        <div style="display:flex;align-items:center;gap:18px;margin-bottom:14px">
+          <div style="text-align:center">
+            <div style="font-size:2.5rem;font-weight:900;color:var(--orange)">${avg}</div>
+            <div style="font-size:1rem">${'⭐'.repeat(Math.round(avg))}</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:2px">${rated.length} ratings</div>
+          </div>
+          <div style="flex:1">
+            ${dist.map(({r,count})=>`
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+                <span style="font-size:.72rem;color:var(--muted);min-width:8px">${r}</span>
+                <div style="flex:1;height:5px;background:var(--border);border-radius:3px">
+                  <div style="height:5px;background:#FFD700;border-radius:3px;width:${rated.length?((count/rated.length)*100).toFixed(0):0}%"></div>
+                </div>
+                <span style="font-size:.72rem;color:var(--muted);min-width:16px">${count}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div style="max-height:200px;overflow-y:auto">
+          ${rated.slice(0,10).map(o=>`
+            <div style="padding:8px 0;border-bottom:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:.8rem;font-weight:700">${o.customer?.name||'Customer'}</span>
+                <span style="font-size:.85rem">${'⭐'.repeat(o.rating)}</span>
+              </div>
+              ${o.review?`<div style="font-size:.76rem;color:var(--muted);margin-top:3px">"${o.review}"</div>`:''}
+            </div>`).join('')}
+        </div>`;
+    }
+  }
+
   document.getElementById('savingsWrap').innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;margin-bottom:16px">
       <div><div style="font-size:1.4rem;font-weight:700;color:var(--green);font-family:monospace">₹${totalRev}</div><div style="color:var(--muted);font-size:.8rem;margin-top:3px">Total Revenue</div></div>
       <div><div style="font-size:1.4rem;font-weight:700;color:var(--orange);font-family:monospace">₹${totalSaved}</div><div style="color:var(--muted);font-size:.8rem;margin-top:3px">Customer Savings</div></div>
     </div>
     <div style="background:rgba(72,196,121,.08);border:1px solid rgba(72,196,121,.2);border-radius:10px;padding:12px;font-size:.84rem;color:var(--green)">🎉 Customers saved <strong>₹${totalSaved}</strong> vs Zomato/Swiggy!</div>`;
+}
+
+
+/* ── SETTINGS: Min Order + Discounts ─────────────────────── */
+let _discType = 'none';
+
+function initSettings() {
+  /* Load saved settings */
+  const minOrder = localStorage.getItem('mmMinOrder') || '';
+  if (minOrder) document.getElementById('minOrderInput').value = minOrder;
+  if (minOrder) document.getElementById('minOrderNote').textContent = '✅ Min order: ₹' + minOrder;
+
+  const disc = JSON.parse(localStorage.getItem('mmDiscount') || '{}');
+  if (disc.type) setDiscType(disc.type);
+  if (disc.value) document.getElementById('discValueInput').value = disc.value;
+  if (disc.minOrder) document.getElementById('discMinInput').value = disc.minOrder;
+  if (disc.type && disc.type !== 'none') {
+    const val  = disc.type === 'percent' ? disc.value + '% off' : '₹' + disc.value + ' off';
+    document.getElementById('discNote').textContent = '✅ Active offer: ' + val + (disc.minOrder ? ' on orders above ₹' + disc.minOrder : '');
+  }
+}
+
+function setDiscType(t) {
+  _discType = t;
+  ['none','percent','flat'].forEach(x => {
+    const btn = document.getElementById('discType' + (x==='none'?'None':x==='percent'?'Pct':'Flat'));
+    if (btn) btn.style.borderColor = x===t ? 'var(--orange)' : 'var(--border)';
+    if (btn) btn.style.color       = x===t ? 'var(--orange)' : 'var(--text)';
+  });
+  const show = t !== 'none';
+  document.getElementById('discValueWrap').style.display = show ? 'block' : 'none';
+  document.getElementById('discMinWrap').style.display   = show ? 'block' : 'none';
+}
+
+function saveMinOrder() {
+  const v = parseInt(document.getElementById('minOrderInput').value) || 0;
+  localStorage.setItem('mmMinOrder', v);
+  /* Push to Firebase so customer panel reads it */
+  if (FIREBASE_URL) {
+    fetch(`${FIREBASE_URL}/mmchats/settings.json`, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ minOrder: v }),
+    }).catch(()=>{});
+  }
+  document.getElementById('minOrderNote').textContent = v > 0 ? '✅ Saved! Min order: ₹' + v : '✅ No minimum order';
+  showAdminToast('✅ Minimum order saved: ₹' + v);
+}
+
+function saveDiscount() {
+  const value    = parseInt(document.getElementById('discValueInput')?.value) || 0;
+  const minOrder = parseInt(document.getElementById('discMinInput')?.value)   || 0;
+  const disc     = { type: _discType, value, minOrder };
+  localStorage.setItem('mmDiscount', JSON.stringify(disc));
+  /* Push to Firebase */
+  if (FIREBASE_URL) {
+    fetch(`${FIREBASE_URL}/mmchats/settings.json`, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ discount: disc }),
+    }).catch(()=>{});
+  }
+  let msg = '';
+  if (_discType === 'none') msg = '✅ No active offer';
+  else if (_discType === 'percent') msg = '✅ ' + value + '% off' + (minOrder ? ' on orders above ₹' + minOrder : '');
+  else msg = '✅ ₹' + value + ' flat off' + (minOrder ? ' on orders above ₹' + minOrder : '');
+  document.getElementById('discNote').textContent = msg;
+  showAdminToast('✅ Offer saved!');
 }
 
 /* ── TEST ORDER ──────────────────────────────────────────── */
@@ -2538,5 +2933,10 @@ function initShopStatus() {
 }
 
 </script>
+<!-- KOT PRINT AREA -->
+<div id="kotPrintArea">
+  <div id="kotContent"></div>
+</div>
+
 </body>
 </html>
