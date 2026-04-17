@@ -423,6 +423,112 @@ async function pushStockStatus() {
 /* ── DISCOUNT ── */
 .discount-badge { display:inline-block;background:rgba(72,196,121,.15);color:#48C479;font-size:.65rem;font-weight:800;padding:2px 7px;border-radius:4px;margin-left:5px; }
 
+
+/* ══ ZOMATO-STYLE NEW ORDER POPUP ══════════════════════════ */
+#newOrderPopup {
+  position: fixed; inset: 0; z-index: 10000;
+  background: #0D0D0D;
+  display: none; flex-direction: column;
+  font-family: 'Space Grotesk', sans-serif;
+}
+#newOrderPopup.show { display: flex; }
+.nop-header {
+  background: #E23744;
+  padding: 20px 20px 16px;
+  text-align: center;
+}
+.nop-ring {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: rgba(255,255,255,.2);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 10px; font-size: 2rem;
+  animation: nop-pulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes nop-pulse {
+  from { transform: scale(1); }
+  to   { transform: scale(1.12); }
+}
+.nop-title {
+  color: #fff; font-size: 1.3rem; font-weight: 900;
+  letter-spacing: .5px;
+}
+.nop-subtitle { color: rgba(255,255,255,.8); font-size: .85rem; margin-top: 3px; }
+.nop-body { flex: 1; overflow-y: auto; padding: 20px; }
+.nop-card {
+  background: #1C1C1C; border-radius: 16px;
+  padding: 16px; margin-bottom: 14px;
+}
+.nop-label {
+  font-size: .65rem; font-weight: 800; color: #6B6B8A;
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px;
+}
+.nop-customer-row {
+  display: flex; align-items: center; gap: 12px;
+}
+.nop-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: #E23744; display: flex; align-items: center;
+  justify-content: center; font-size: 1.2rem; font-weight: 900; color: #fff;
+  flex-shrink: 0;
+}
+.nop-cname { font-size: 1rem; font-weight: 800; color: #fff; }
+.nop-cphone { font-size: .8rem; color: #6B6B8A; margin-top: 2px; }
+.nop-items-list { display: flex; flex-direction: column; gap: 8px; }
+.nop-item-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid #2A2A2A;
+}
+.nop-item-row:last-child { border-bottom: none; }
+.nop-item-name { font-size: .88rem; font-weight: 700; color: #fff; }
+.nop-item-qty { font-size: .8rem; color: #6B6B8A; margin-top: 2px; }
+.nop-item-price { font-size: .88rem; font-weight: 800; color: #FC8019; }
+.nop-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; background: #111; border-radius: 12px; margin-top: 4px;
+}
+.nop-total-label { font-size: .9rem; font-weight: 700; color: #fff; }
+.nop-total-amt { font-size: 1.1rem; font-weight: 900; color: #48C479; }
+.nop-addr { font-size: .82rem; color: #9CA3AF; line-height: 1.5; }
+
+/* Prep time selector */
+.nop-prep-section { padding: 16px 20px; border-top: 1px solid #1C1C1C; }
+.nop-prep-label {
+  font-size: .75rem; font-weight: 800; color: #6B6B8A;
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px;
+}
+.nop-prep-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+.nop-prep-btn {
+  padding: 10px 6px; border: 1.5px solid #2A2A2A; border-radius: 10px;
+  background: #1C1C1C; color: #9CA3AF;
+  font-size: .78rem; font-weight: 700; cursor: pointer; text-align: center;
+  font-family: 'Space Grotesk', sans-serif; transition: .15s;
+}
+.nop-prep-btn.selected {
+  border-color: #48C479; background: rgba(72,196,121,.12); color: #48C479;
+}
+
+/* Accept / Reject buttons */
+.nop-actions {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  padding: 16px 20px 28px;
+}
+.nop-reject {
+  padding: 16px; border: 2px solid #E23744; border-radius: 14px;
+  background: transparent; color: #E23744;
+  font-size: .95rem; font-weight: 800; cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.nop-accept {
+  padding: 16px; border: none; border-radius: 14px;
+  background: #48C479; color: #000;
+  font-size: .95rem; font-weight: 900; cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.nop-accept:active { transform: scale(.97); }
+.nop-reject:active { transform: scale(.97); }
+
 </style>
 </head>
 <body>
@@ -453,6 +559,27 @@ async function pushStockStatus() {
 </div>
 
 <!-- ADMIN LOGIN SCREEN -->
+<div id="newOrderPopup" style="position:fixed;inset:0;z-index:10000;background:#0D0D0D;display:none;flex-direction:column;font-family:'Space Grotesk',sans-serif">
+  <div style="background:#E23744;padding:20px 20px 16px;text-align:center">
+    <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:2rem;animation:nop-pulse .8s ease-in-out infinite alternate">🔔</div>
+    <div style="color:#fff;font-size:1.3rem;font-weight:900;letter-spacing:.5px">New Order!</div>
+    <div id="nopSubtitle" style="color:rgba(255,255,255,.8);font-size:.85rem;margin-top:3px">Order incoming</div>
+  </div>
+  <div class="nop-body" id="nopBody" style="flex:1;overflow-y:auto;padding:20px"></div>
+  <div style="padding:16px 20px;border-top:1px solid #1C1C1C">
+    <div style="font-size:.75rem;font-weight:800;color:#6B6B8A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Prep time</div>
+    <div class="nop-prep-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      <button class="nop-prep-btn selected" onclick="selectPrepTime(15,this)">15 min</button>
+      <button class="nop-prep-btn" onclick="selectPrepTime(20,this)">20 min</button>
+      <button class="nop-prep-btn" onclick="selectPrepTime(30,this)">30 min</button>
+      <button class="nop-prep-btn" onclick="selectPrepTime(45,this)">45 min</button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px 20px 32px">
+    <button class="nop-reject" onclick="rejectOrder()">✕ Reject</button>
+    <button class="nop-accept" onclick="acceptOrder()">✓ Accept</button>
+  </div>
+</div>
 <div id="adminAuth" style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;font-family:'Space Grotesk',sans-serif">
   <div style="background:#13131A;border:1px solid #2A2A3D;border-radius:20px;padding:36px 28px;width:100%;max-width:360px;text-align:center">
     <div style="font-size:2.8rem;margin-bottom:14px">🔐</div>
@@ -468,7 +595,7 @@ async function pushStockStatus() {
       style="width:100%;padding:14px;background:linear-gradient(135deg,#E23744,#FC8019);border:none;border-radius:10px;color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">
       Login to Dashboard
     </button>
-    <p style="margin-top:12px;font-size:.74rem;color:#6B6B8A">welcome</p>
+    <p style="margin-top:12px;font-size:.74rem;color:#6B6B8A">Hi</p>
   </div>
 </div>
 
@@ -641,6 +768,32 @@ async function pushStockStatus() {
 
   <!-- DASHBOARD -->
   <section class="admin-section" id="section-dashboard">
+
+    <!-- ══ SHOP STATUS — TOP (Zomato style) ══════════════════ -->
+    <div style="margin:-24px -24px 20px;padding:16px 18px;background:var(--panel);border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div style="font-size:.62rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Shop Status</div>
+          <div id="dashShopStatusText" style="font-size:1.05rem;font-weight:900;color:#48C479;display:flex;align-items:center;gap:7px">
+            <span id="dashShopDot" style="width:10px;height:10px;border-radius:50%;background:#48C479;animation:pulse-green 1.5s infinite;display:inline-block"></span>
+            Open for orders
+          </div>
+          <div id="dashShopSub" style="font-size:.7rem;color:var(--muted);margin-top:2px">Auto · 4:30 PM – 9:00 PM</div>
+        </div>
+        <label style="position:relative;width:58px;height:30px;cursor:pointer;flex-shrink:0">
+          <input type="checkbox" id="dashShopSwitch" checked style="opacity:0;width:0;height:0;position:absolute" onchange="manualToggleShop(this.checked)">
+          <div id="dashSwitchTrack" style="position:absolute;inset:0;background:#48C479;border-radius:30px;transition:.3s"></div>
+          <div id="dashSwitchThumb" style="position:absolute;top:3px;left:31px;width:24px;height:24px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 2px 5px rgba(0,0,0,.4)"></div>
+        </label>
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button onclick="quickAction('open_now')" style="padding:6px 13px;background:rgba(72,196,121,.1);border:1px solid rgba(72,196,121,.3);border-radius:20px;color:#48C479;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">● Open Now</button>
+        <button onclick="quickAction('close_now')" style="padding:6px 13px;background:rgba(226,55,68,.1);border:1px solid rgba(226,55,68,.3);border-radius:20px;color:#E23744;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">● Close Now</button>
+        <button onclick="quickAction('close_today')" style="padding:6px 13px;background:rgba(252,128,25,.1);border:1px solid rgba(252,128,25,.3);border-radius:20px;color:#FC8019;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">Off Today</button>
+        <button onclick="showHolidayModal()" style="padding:6px 13px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);border-radius:20px;color:#A78BFA;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">Holiday</button>
+      </div>
+    </div>
+
     <div class="page-header">
       <div><h2>📊 Dashboard</h2><p>Active orders only — delivered auto-clear</p></div>
       <div class="header-actions">
@@ -1165,32 +1318,137 @@ function notifyNewOrder(order) {
   }
 }
 
+
+/* ══ ZOMATO-STYLE NEW ORDER POPUP ══════════════════════════ */
+let _nopOrder      = null;
+let _nopPrepTime   = 15;
+let _nopSoundTimer = null;
+
+function showNewOrderPopup(order) {
+  _nopOrder    = order;
+  _nopPrepTime = 15;
+
+  /* Reset prep buttons */
+  document.querySelectorAll('.nop-prep-btn').forEach((b,i) => {
+    b.classList.toggle('selected', i === 0);
+  });
+
+  /* Fill subtitle */
+  const sub = document.getElementById('nopSubtitle');
+  if (sub) sub.textContent = order.customer?.name + ' · ₹' + order.total;
+
+  /* Fill body */
+  const body = document.getElementById('nopBody');
+  if (body) {
+    const initial = (order.customer?.name || 'C')[0].toUpperCase();
+    const items   = order.items || [];
+    const itemsHTML = items.map(i => `
+      <div class="nop-item-row">
+        <div>
+          <div class="nop-item-name">${i.name}</div>
+          <div class="nop-item-qty">Qty: ${i.qty}</div>
+        </div>
+        <div class="nop-item-price">₹${i.price * i.qty}</div>
+      </div>`).join('');
+
+    body.innerHTML = `
+      <div class="nop-card">
+        <div class="nop-label">Customer</div>
+        <div class="nop-customer-row">
+          <div class="nop-avatar">${initial}</div>
+          <div>
+            <div class="nop-cname">${order.customer?.name || 'Customer'}</div>
+            <div class="nop-cphone">📞 ${order.customer?.phone || ''}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nop-card">
+        <div class="nop-label">Order #${order.id}</div>
+        <div class="nop-items-list">${itemsHTML}</div>
+        <div class="nop-total-row">
+          <span class="nop-total-label">To Pay</span>
+          <span class="nop-total-amt">₹${order.total}</span>
+        </div>
+      </div>
+
+      <div class="nop-card">
+        <div class="nop-label">Delivery Address</div>
+        <div class="nop-addr">📍 ${order.customer?.addr || 'No address'}</div>
+      </div>`;
+  }
+
+  /* Show popup */
+  document.getElementById('newOrderPopup').classList.add('show');
+
+  /* Repeating alert sound */
+  playOrderMelody();
+  _nopSoundTimer = setInterval(playOrderMelody, 6000);
+
+  /* Auto-reject after 3 min if no action */
+  setTimeout(() => {
+    if (document.getElementById('newOrderPopup').classList.contains('show')) {
+      rejectOrder();
+    }
+  }, 180000);
+}
+
+function selectPrepTime(mins, btn) {
+  _nopPrepTime = mins;
+  document.querySelectorAll('.nop-prep-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function acceptOrder() {
+  if (!_nopOrder) return;
+  clearInterval(_nopSoundTimer);
+  stopOrderSound();
+
+  const orders = getOrders();
+  const o = orders.find(x => x.id === _nopOrder.id);
+  if (o) {
+    o.status   = 'preparing';
+    o.prepMins = _nopPrepTime;
+    o.acceptedAt = new Date().toISOString();
+    saveOrders(orders, o.id);
+    /* Start timer on dashboard card */
+    setTimeout(() => startPrepTimer(o.id, _nopPrepTime), 300);
+    /* Auto-book Borzo */
+    setTimeout(() => autoBookBorzoIfConfigured(o), 500);
+  }
+
+  document.getElementById('newOrderPopup').classList.remove('show');
+  currentSection = '';
+  showSection('dashboard');
+  showAdminToast('✅ Order accepted · ' + _nopPrepTime + ' min prep');
+  updatePendingBadge();
+}
+
+function rejectOrder() {
+  if (!_nopOrder) return;
+  clearInterval(_nopSoundTimer);
+  stopOrderSound();
+
+  const orders = getOrders();
+  const o = orders.find(x => x.id === _nopOrder.id);
+  if (o) {
+    o.status = 'cancelled';
+    o.cancelledAt = new Date().toISOString();
+    saveOrders(orders, o.id);
+  }
+
+  document.getElementById('newOrderPopup').classList.remove('show');
+  showAdminToast('❌ Order rejected');
+  updatePendingBadge();
+  if (currentSection === 'dashboard') renderDashboard();
+}
+
 let _soundLoopInterval = null;
 
 function showNewOrderBanner(order){
-  const banner=document.getElementById('newOrderBanner');
-  document.getElementById('bannerText').textContent=`🔔 New Order! ${order?.customer?.name||''} · ₹${order?.total||''}`;
-  banner.classList.add('show');
-  playOrderMelody();
-  notifyNewOrder(order);   /* WhatsApp + browser push */
-  clearTimeout(bannerTimer);
-  bannerTimer=setTimeout(dismissBanner, 60000);
-
-  /* ── Repeat sound every 8 seconds until order is confirmed ──
-     Stops when admin changes order status (any status change)
-  ────────────────────────────────────────────────────────── */
-  clearInterval(_soundLoopInterval);
-  _soundLoopInterval = setInterval(() => {
-    /* Keep ringing until all orders are no longer pending */
-    const hasPending = getOrders().some(o => o.status === 'pending');
-    if (hasPending) {
-      playOrderMelody();
-    } else {
-      /* All orders confirmed — stop ringing */
-      clearInterval(_soundLoopInterval);
-      _soundLoopInterval = null;
-    }
-  }, 8000);
+  /* ── Zomato style: full screen takeover ── */
+  showNewOrderPopup(order);
+  notifyNewOrder(order);  /* WhatsApp + browser push */
 }
 
 function dismissBanner(){
@@ -1687,95 +1945,137 @@ function bookRapido(order) {
   }, 1500);
 }
 
-/* Show Rapido details modal — easy copy for manual booking */
+/* Show Rapido semi-auto modal — auto-fills pickup + drop, opens app */
 function showRapidoModal(order) {
-  const custAddr  = order.customer.addr  || 'No address';
-  const custName  = order.customer.name  || '';
-  const custPhone = order.customer.phone || '';
-  const items     = order.items.map(i => i.name + '×' + i.qty).join(', ');
+  if (!order) return;
+  const custAddr  = (order.customer?.addr  || 'No address').trim();
+  const custName  = order.customer?.name  || 'Customer';
+  const custPhone = order.customer?.phone || '';
+  const items     = (order.items||[]).map(i => i.name + '×' + i.qty).join(', ');
   const amt       = order.total || 0;
 
-  /* Remove old modal if exists */
-  const old = document.getElementById('rapidoModal');
-  if (old) old.remove();
+  /* Build smart Rapido URLs with auto-filled addresses */
+  const pickupEnc  = encodeURIComponent(SHOP_ADDRESS);
+  const dropEnc    = encodeURIComponent(custAddr + ', Bangalore');
+
+  /* Rapido Box (parcel delivery) deep link */
+  const rapidoBox  = `https://www.rapido.bike/book-parcel?pickup=${pickupEnc}&drop=${dropEnc}`;
+
+  /* Google Maps route from shop to customer (navigate button) */
+  const mapsRoute  = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(SHOP_ADDRESS)}&destination=${encodeURIComponent(custAddr + ' Bangalore')}`;
+
+  /* WhatsApp to find a delivery boy manually */
+  const waMsg = encodeURIComponent(
+    `*Delivery needed*\n` +
+    `Pickup: ${SHOP_ADDRESS}\n` +
+    `Drop: ${custAddr}\n` +
+    `Customer: ${custName} · ${custPhone}\n` +
+    `Items: ${items}\n` +
+    `Amount: ₹${amt}`
+  );
+  const waLink = `https://wa.me/?text=${waMsg}`;
+
+  /* Remove old modal */
+  document.getElementById('rapidoModal')?.remove();
 
   const modal = document.createElement('div');
   modal.id = 'rapidoModal';
-  modal.style.cssText = `
-    position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;
-    display:flex;align-items:flex-end;justify-content:center;
-    font-family:'Space Grotesk',sans-serif;
-  `;
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:flex-end;justify-content:center;font-family:Space Grotesk,sans-serif';
 
   modal.innerHTML = `
-    <div style="background:#1C1C27;border-radius:20px 20px 0 0;width:100%;max-width:440px;padding:20px 20px 32px">
+    <div style="background:#1C1C27;border-radius:20px 20px 0 0;width:100%;max-width:460px;padding:20px 20px 36px;max-height:90vh;overflow-y:auto">
 
       <!-- Header -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:40px;height:40px;background:#FFD700;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem">🛵</div>
+          <div style="width:42px;height:42px;background:#FFD700;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem">🛵</div>
           <div>
-            <div style="font-weight:800;font-size:1rem;color:#fff">Book Rapido</div>
-            <div style="font-size:.72rem;color:#6B6B8A">Order #${order.id}</div>
+            <div style="font-size:1rem;font-weight:900;color:#fff">Book Delivery</div>
+            <div style="font-size:.72rem;color:#6B6B8A">Order #${order.id} · ₹${amt}</div>
           </div>
         </div>
         <button onclick="document.getElementById('rapidoModal').remove()"
-          style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:1.1rem;cursor:pointer">✕</button>
+          style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem">✕</button>
       </div>
 
-      <!-- Pickup -->
-      <div style="background:#13131A;border-radius:12px;padding:12px 14px;margin-bottom:8px">
-        <div style="font-size:.65rem;font-weight:700;color:#FFD700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">📦 PICKUP</div>
-        <div style="font-size:.88rem;color:#fff;font-weight:700;margin-bottom:2px">${SHOP_NAME}</div>
-        <div style="font-size:.76rem;color:#6B6B8A;line-height:1.5">${SHOP_ADDRESS}</div>
+      <!-- Pickup card (pre-filled) -->
+      <div style="background:#13131A;border-radius:12px;padding:12px 14px;margin-bottom:8px;border:1px solid rgba(255,215,0,.2)">
+        <div style="font-size:.62rem;font-weight:800;color:#FFD700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">📦 PICKUP (Your Shop)</div>
+        <div style="font-size:.88rem;color:#fff;font-weight:700">${SHOP_NAME}</div>
+        <div style="font-size:.76rem;color:#9CA3AF;margin-top:3px;line-height:1.5">${SHOP_ADDRESS}</div>
         <div style="font-size:.75rem;color:#4A9EFF;margin-top:4px">📞 ${SHOP_PHONE}</div>
+        <button onclick="navigator.clipboard.writeText('${SHOP_ADDRESS}').then(()=>showAdminToast('✅ Pickup address copied!'))"
+          style="margin-top:8px;padding:5px 12px;background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.3);border-radius:8px;color:#FFD700;font-size:.7rem;font-weight:700;cursor:pointer;font-family:Space Grotesk,sans-serif">
+          📋 Copy Pickup
+        </button>
       </div>
 
-      <!-- Drop -->
-      <div style="background:#13131A;border-radius:12px;padding:12px 14px;margin-bottom:12px">
-        <div style="font-size:.65rem;font-weight:700;color:#FC8019;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">🏠 DROP</div>
-        <div style="font-size:.88rem;color:#fff;font-weight:700;margin-bottom:2px">${custName}</div>
-        <div style="font-size:.76rem;color:#6B6B8A;line-height:1.5">${custAddr}</div>
+      <!-- Drop card (pre-filled) -->
+      <div style="background:#13131A;border-radius:12px;padding:12px 14px;margin-bottom:14px;border:1px solid rgba(252,128,25,.2)">
+        <div style="font-size:.62rem;font-weight:800;color:#FC8019;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">🏠 DROP (Customer)</div>
+        <div style="font-size:.88rem;color:#fff;font-weight:700">${custName}</div>
+        <div style="font-size:.76rem;color:#9CA3AF;margin-top:3px;line-height:1.5">${custAddr}</div>
         <div style="font-size:.75rem;color:#4A9EFF;margin-top:4px">📞 ${custPhone}</div>
+        <div style="display:flex;gap:7px;margin-top:8px">
+          <button onclick="navigator.clipboard.writeText('${custAddr.replace(/'/g,"\\'")}').then(()=>showAdminToast('✅ Drop address copied!'))"
+            style="flex:1;padding:5px 0;background:rgba(252,128,25,.1);border:1px solid rgba(252,128,25,.3);border-radius:8px;color:#FC8019;font-size:.7rem;font-weight:700;cursor:pointer;font-family:Space Grotesk,sans-serif">
+            📋 Copy Drop
+          </button>
+          <a href="tel:${custPhone}"
+            style="flex:1;padding:5px 0;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.3);border-radius:8px;color:#4A9EFF;font-size:.7rem;font-weight:700;text-decoration:none;display:flex;align-items:center;justify-content:center">
+            📞 Call
+          </a>
+        </div>
       </div>
 
-      <!-- Order details -->
-      <div style="background:#13131A;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:.76rem;color:#6B6B8A">
-        🛍 ${items}<br>
-        <span style="color:#FFD700;font-weight:700">₹${amt} collected via UPI</span>
+      <!-- Items summary -->
+      <div style="background:#13131A;border-radius:10px;padding:10px 13px;margin-bottom:16px;font-size:.76rem;color:#6B6B8A">
+        🛍 ${items}
+      </div>
+
+      <!-- HOW TO USE steps -->
+      <div style="background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.15);border-radius:10px;padding:12px;margin-bottom:14px">
+        <div style="font-size:.72rem;font-weight:800;color:#FFD700;margin-bottom:8px">📱 How to book in 30 seconds:</div>
+        <div style="font-size:.73rem;color:#9CA3AF;line-height:1.8">
+          1️⃣ Tap <b style="color:#fff">"Open Rapido"</b> below<br>
+          2️⃣ Choose <b style="color:#fff">Rapido Box / Parcel</b><br>
+          3️⃣ Tap <b style="color:#fff">"Copy Pickup"</b> → paste in Rapido pickup field<br>
+          4️⃣ Tap <b style="color:#fff">"Copy Drop"</b> → paste in Rapido drop field<br>
+          5️⃣ Book! Rider arrives in ~7 min 🎉
+        </div>
       </div>
 
       <!-- Action buttons -->
-      <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;flex-direction:column;gap:9px">
 
-        <!-- Open Rapido app -->
-        <a href="https://rapido.bike" target="_blank"
-           style="display:flex;align-items:center;justify-content:center;gap:10px;background:#FFD700;border-radius:12px;padding:14px;text-decoration:none;font-weight:800;font-size:.92rem;color:#000">
-          🛵 Open Rapido App
+        <!-- Open Rapido with pre-filled link -->
+        <a href="${rapidoBox}" target="_blank"
+          style="display:flex;align-items:center;justify-content:center;gap:10px;background:#FFD700;border-radius:12px;padding:14px;text-decoration:none;font-weight:900;font-size:.95rem;color:#000">
+          🛵 Open Rapido (Auto-Fill Addresses)
         </a>
 
-        <!-- Copy drop address -->
-        <button onclick="navigator.clipboard.writeText('${custAddr.replace(/'/g,"\\'")}').then(()=>showAdminToast('✅ Drop address copied!'))"
-          style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px;color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;font-family:'Space Grotesk',sans-serif">
-          📋 Copy Drop Address
-        </button>
+        <!-- Navigate on Maps -->
+        <a href="${mapsRoute}" target="_blank"
+          style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(74,158,255,.12);border:1px solid rgba(74,158,255,.3);border-radius:12px;padding:12px;text-decoration:none;font-weight:700;font-size:.85rem;color:#4A9EFF">
+          🗺️ Navigate to Customer
+        </a>
 
-        <!-- Call customer -->
-        <a href="tel:${custPhone}"
-           style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.25);border-radius:12px;padding:12px;text-decoration:none;font-weight:700;font-size:.85rem;color:#4A9EFF">
-          📞 Call Customer: ${custPhone}
+        <!-- Share via WhatsApp to find delivery boy -->
+        <a href="${waLink}" target="_blank"
+          style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);border-radius:12px;padding:12px;text-decoration:none;font-weight:700;font-size:.85rem;color:#25D366">
+          📱 Share on WhatsApp
         </a>
 
       </div>
-    </div>
-  `;
+    </div>`;
 
   document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
 
-  /* Close on backdrop click */
-  modal.addEventListener('click', e => {
-    if (e.target === modal) modal.remove();
-  });
+  /* Auto-copy pickup address to clipboard for convenience */
+  setTimeout(() => {
+    navigator.clipboard.writeText(SHOP_ADDRESS).catch(() => {});
+  }, 300);
 }
 
 function gpsButtons(order){
@@ -1844,50 +2144,95 @@ function startPrepTimer(orderId, mins) {
 
 /* ── ORDER CARD HTML (mobile-first card layout) ──────────── */
 function orderCardHTML(o){
-  const time=new Date(o.placedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  const date=new Date(o.placedAt).toLocaleDateString([],{day:'numeric',month:'short'});
-  const orderId = JSON.stringify(o).replace(/'/g, "\\'");
-  return`<div class="order-card-wrap">
-    <div class="order-card-top">
-      <div>
-        <div class="order-id-txt">#${o.id}</div>
-        <div class="order-name-txt">${o.customer.name}</div>
+  try {
+    /* Safety guards */
+    if (!o || !o.id) return '';
+    const customer = o.customer || {};
+    const items    = Array.isArray(o.items) ? o.items : [];
+    const name     = customer.name  || 'Customer';
+    const phone    = customer.phone || '';
+    const addr     = customer.addr  || 'No address';
+    const total    = o.total || 0;
+    const status   = o.status || 'pending';
+
+    const time = new Date(o.placedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const date = new Date(o.placedAt).toLocaleDateString([],{day:'numeric',month:'short'});
+    const sc   = {pending:'#FC8019',preparing:'#4A9EFF',out_for_delivery:'#A78BFA',delivered:'#48C479',cancelled:'#E23744'}[status]||'#FC8019';
+    const sl   = {pending:'Pending',preparing:'Preparing 🔥',out_for_delivery:'On the Way 🛵',delivered:'Delivered ✓',cancelled:'Cancelled'}[status]||status;
+
+    const itemsHTML = items.map(i=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1C1C27">
+        <div>
+          <div style="font-size:.84rem;font-weight:700;color:#fff">${i.name||''}</div>
+          <div style="font-size:.72rem;color:#6B6B8A">₹${i.price||0} × ${i.qty||1}</div>
+        </div>
+        <div style="font-size:.84rem;font-weight:800;color:#FC8019">₹${(i.price||0)*(i.qty||1)}</div>
+      </div>`).join('');
+
+    const prepHTML = [15,20,30,45].map(t=>{
+      const active = (o.prepMins||0)===t;
+      return `<button id="pbtn_${o.id}_${t}" onclick="startPrepTimer('${o.id}',${t})"
+        style="padding:5px 10px;border-radius:20px;border:1px solid ${active?'#48C479':'#2A2A3D'};background:${active?'rgba(72,196,121,.15)':'transparent'};color:${active?'#48C479':'#9CA3AF'};font-size:.7rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">${t}m</button>`;
+    }).join('');
+
+    return `<div style="background:#1C1C27;border-radius:16px;overflow:hidden;margin-bottom:14px;border:1px solid #2A2A3D">
+
+      <div style="background:#13131A;padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:.68rem;font-weight:800;color:#6B6B8A;letter-spacing:.5px">ORDER #${o.id}</div>
+          <div style="font-size:.8rem;color:#9CA3AF;margin-top:2px">🕐 ${time}, ${date}</div>
+        </div>
+        <div style="padding:5px 12px;border-radius:20px;font-size:.72rem;font-weight:800;background:${sc}18;color:${sc};border:1px solid ${sc}40">${sl}</div>
       </div>
-      ${statusBadge(o.status)}
-    </div>
-    <div class="order-meta-row">
-      <span>📞 ${o.customer.phone}</span>
-      <span>💰 ₹${o.total}</span>
-      <span>💳 ${o.paymentMethod||'UPI'}</span>
-      <span>🕐 ${time}, ${date}</span>
-    </div>
-    <div class="order-items-txt">🛍 ${o.items.map(i=>i.name+'×'+i.qty).join(' · ')}</div>
-    <div style="font-size:.74rem;color:var(--muted);margin-bottom:10px">📍 ${o.customer.addr}</div>
 
-    <!-- KOT Print button -->
-    <button onclick='printKOT(${JSON.stringify(o)})'
-      style="width:100%;padding:9px;background:rgba(74,158,255,.12);border:1px solid rgba(74,158,255,.3);border-radius:10px;color:#4A9EFF;font-weight:800;font-size:.8rem;cursor:pointer;font-family:'Space Grotesk',sans-serif;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:8px">
-      🖨️ Print KOT
-    </button>
+      <div style="padding:12px 16px;border-bottom:1px solid #2A2A3D;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:38px;height:38px;border-radius:50%;background:#E23744;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:900;color:#fff;flex-shrink:0">${name[0].toUpperCase()}</div>
+          <div>
+            <div style="font-size:.9rem;font-weight:800;color:#fff">${name}</div>
+            <div style="font-size:.76rem;color:#6B6B8A">📞 ${phone}</div>
+          </div>
+        </div>
+        <div style="font-size:1.1rem;font-weight:900;color:#48C479">₹${total}</div>
+      </div>
 
-    <!-- Borzo automatic delivery button -->
-    <button onclick='window._lastOrder=${JSON.stringify(o)};borzoBookDelivery(${JSON.stringify(o)})'
-      style="width:100%;padding:11px;background:linear-gradient(135deg,#00C853,#009624);border:none;border-radius:10px;color:#fff;font-weight:800;font-size:.84rem;cursor:pointer;font-family:'Space Grotesk',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;box-shadow:0 3px 12px rgba(0,200,83,.3)">
-      🛵 Auto Book Borzo Delivery
-    </button>
+      <div style="padding:12px 16px;border-bottom:1px solid #2A2A3D">${itemsHTML||'<div style="color:#6B6B8A;font-size:.82rem">No items</div>'}</div>
 
-    <!-- Prep Timer -->
-    <div class="prep-timer-wrap">
-      <span style="font-size:.72rem;font-weight:700;color:var(--muted)">⏱ Prep:</span>
-      ${[10,20,30].map(t=>`<button class="prep-btn" id="pbtn_${o.id}_${t}"
-        onclick="startPrepTimer('${o.id}',${t})">${t}m</button>`).join('')}
-      <span class="prep-countdown" id="ptimer_${o.id}">--:--</span>
-    </div>
-    <div class="order-card-actions">
-      ${statusSelectHTML(o.id,o.status)}
-      ${gpsButtons(o)}
-    </div>
-  </div>`;
+      <div style="padding:10px 16px;border-bottom:1px solid #2A2A3D;font-size:.78rem;color:#9CA3AF;line-height:1.5">
+        📍 ${addr}
+      </div>
+
+      <div style="padding:10px 16px;border-bottom:1px solid #2A2A3D;display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+        <span style="font-size:.72rem;font-weight:700;color:#6B6B8A">⏱ Prep:</span>
+        ${prepHTML}
+        <span id="ptimer_${o.id}" style="font-size:.78rem;font-weight:800;color:#FC8019;font-family:monospace;margin-left:4px">--:--</span>
+      </div>
+
+      <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+        ${statusSelectHTML(o.id, status)}
+        <div style="display:flex;gap:8px">
+          <button onclick="printKOTById('${o.id}')"
+            style="flex:1;padding:10px;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.3);border-radius:10px;color:#4A9EFF;font-weight:700;font-size:.78rem;cursor:pointer;font-family:Space Grotesk,sans-serif">
+            🖨️ KOT
+          </button>
+          <button onclick="borzoBookById('${o.id}')"
+            style="flex:1;padding:10px;background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.3);border-radius:10px;color:#FFD700;font-weight:700;font-size:.78rem;cursor:pointer;font-family:Space Grotesk,sans-serif">
+            🛵 Rapido
+          </button>
+          <button onclick="cancelOrder('${o.id}')"
+            style="flex:1;padding:10px;background:rgba(226,55,68,.1);border:1px solid rgba(226,55,68,.3);border-radius:10px;color:#E23744;font-weight:700;font-size:.78rem;cursor:pointer;font-family:Space Grotesk,sans-serif">
+            ✕ Cancel
+          </button>
+        </div>
+        ${gpsButtons(o)}
+      </div>
+    </div>`;
+  } catch(err) {
+    console.error('[orderCardHTML] Error for order', o?.id, err);
+    return `<div style="background:#1C1C27;border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid #E23744;color:#E23744;font-size:.82rem">
+      ⚠️ Error rendering order ${o?.id||'?'} — ${err.message}
+    </div>`;
+  }
 }
 
 function updatePendingBadge(){
@@ -1896,6 +2241,17 @@ function updatePendingBadge(){
   if(badge){badge.textContent=cnt;badge.classList.toggle('show',cnt>0);}
 }
 
+
+
+/* Safe wrappers — look up order by ID so no JSON in onclick attrs */
+function printKOTById(id) {
+  const o = _ordersCache.find(x => x.id === id);
+  if (o) printKOT(o);
+}
+function borzoBookById(id) {
+  const o = _ordersCache.find(x => x.id === id);
+  if (o) showRapidoModal(o);   /* Semi-auto Rapido with pre-filled addresses */
+}
 
 /* ── KOT PRINT ─────────────────────────────────────────────── */
 function printKOT(order) {
@@ -1962,12 +2318,20 @@ function showSection(target){
 
   currentSection=target;
   switch(target){
-    case 'dashboard': renderDashboard();    break;
-    case 'orders':    renderActiveOrders(); break;
-    case 'history':   renderHistory();      break;
+    case 'dashboard':
+      pullAndSync().then(() => renderDashboard());
+      break;
+    case 'orders':
+      pullAndSync().then(() => renderActiveOrders());
+      break;
+    case 'history':
+      pullAndSync().then(() => renderHistory());
+      break;
     case 'menu':      renderMenuMgmt();     break;
     case 'users':     renderUsers();        break;
-    case 'revenue':   renderRevenue();      break;
+    case 'revenue':
+      pullAndSync().then(() => renderRevenue());
+      break;
     case 'settings':  initSettings();       break;
   }
 }
@@ -2012,22 +2376,35 @@ function renderDashboard(){
     </div>`;
 
   const el = document.getElementById('dashOrderList');
+  if (!el) return;
   if (!active.length) {
     el.innerHTML = `<div class="empty-state"><div class="es-icon">🎉</div><p>All orders delivered! Dashboard is clear.</p></div>`;
     return;
   }
-  el.innerHTML = active.map(orderCardHTML).join('');
+  try {
+    el.innerHTML = active.map(orderCardHTML).join('');
+  } catch(err) {
+    console.error('[renderDashboard] card render error:', err);
+    el.innerHTML = `<div style="color:#E23744;padding:12px">Error rendering orders: ${err.message}</div>`;
+  }
 }
 
 function renderActiveOrders(){
-  const active=getActiveOrders();
-  document.getElementById('orderCountLabel').textContent=active.length+' active';
-  const el=document.getElementById('activeOrdersWrap');
-  if(!active.length){
-    el.innerHTML=`<div class="empty-state"><div class="es-icon">✅</div><p>No active orders right now!</p></div>`;
+  const active = getActiveOrders();
+  const el     = document.getElementById('activeOrdersWrap');
+  const label  = document.getElementById('orderCountLabel');
+  if (label) label.textContent = active.length + ' active';
+  if (!el) return;
+  if (!active.length) {
+    el.innerHTML = `<div class="empty-state"><div class="es-icon">✅</div><p>No active orders right now!</p></div>`;
     return;
   }
-  el.innerHTML=active.map(orderCardHTML).join('');
+  try {
+    el.innerHTML = active.map(orderCardHTML).join('');
+  } catch(err) {
+    console.error('[renderActiveOrders] error:', err);
+    el.innerHTML = `<div style="color:#E23744;padding:12px">Error: ${err.message}</div>`;
+  }
 }
 
 function renderHistory(){
