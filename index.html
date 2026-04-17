@@ -148,6 +148,15 @@
 #shopClosedBanner.show { display: block; animation: bannerSlide .3s ease; }
 @keyframes bannerSlide { from{transform:translateY(-100%)} to{transform:translateY(0)} }
 
+
+/* ── RATING MODAL ── */
+.rating-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;display:none;align-items:flex-end;justify-content:center;}
+.rating-modal.show{display:flex;}
+.rating-sheet{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:440px;padding:22px 20px 36px;}
+.rating-stars{display:flex;justify-content:center;gap:8px;margin:16px 0;}
+.star-rate{font-size:2.2rem;cursor:pointer;transition:.2s;filter:grayscale(1) opacity(.4);}
+.star-rate.active{filter:none;transform:scale(1.1);}
+
 </style>
 <style>
 /* ════════════════════════════════════════════════════════
@@ -1681,6 +1690,7 @@ body {
     </div>
     <div class="bill-rows">
       <div class="bill-row"><span>Item Total</span><span class="val" id="cartSubtotal">₹0</span></div>
+      <div class="bill-row" id="cartDiscountRow" style="display:none;color:#48C479"><span>🏷️ Discount</span><span class="val" id="cartDiscountAmt" style="color:#48C479">-₹0</span></div>
       <div class="bill-row"><span>Delivery Fee</span><span class="val" style="color:var(--orange)">₹50</span></div>
       <div class="bill-row"><span>Taxes &amp; Charges</span><span class="val" style="color:var(--green)">₹0</span></div>
       <div class="bill-row main"><span>To Pay</span><span class="val" id="cartTotal">₹0</span></div>
@@ -1826,63 +1836,39 @@ const USE_FIREBASE = !!FIREBASE_URL;
 const USE_JSONBIN  = !!JSONBIN_URL && !USE_FIREBASE;
 
 /* Push orders to cloud — called after every new order */
-async function cloudPush() {
-  const all = JSON.parse(localStorage.getItem('mmorders') || '[]');
-  if (USE_FIREBASE) {
-    /* Firebase — instant, no polling needed */
+async function cloudPush(newOrder) {
+  /* Push only the new order — don't overwrite other orders */
+  if (USE_FIREBASE && newOrder) {
     try {
-      await fetch(`${FIREBASE_URL}/mmchats.json`, {
+      await fetch(`${FIREBASE_URL}/mmchats/orders/${newOrder.id}.json`, {
         method:  'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ orders: all }),
-      });
-    } catch(e) { /* silent */ }
-  } else if (USE_JSONBIN) {
-    try {
-      await fetch(JSONBIN_URL, {
-        method:  'PUT',
-        headers: {
-          'Content-Type':    'application/json',
-          'X-Master-Key':    JSONBIN_KEY,
-          'X-Bin-Versioning':'false',
-        },
-        body: JSON.stringify({ orders: all }),
+        body:    JSON.stringify(newOrder),
       });
     } catch(e) { /* silent */ }
   }
-  /* localStorage always saved regardless */
 }
 
-/* Pull latest orders from cloud — used for live tracking */
+/* Pull latest orders from Firebase — used for live tracking */
 async function cloudPull() {
   try {
-    let cloudOrders = [];
-    if (USE_FIREBASE) {
-      const resp = await fetch(`${FIREBASE_URL}/mmchats.json`);
-      const data = await resp.json();
-      cloudOrders = data?.orders || [];
-    } else if (USE_JSONBIN) {
-      const resp = await fetch(JSONBIN_URL + '/latest', {
-        headers: { 'X-Master-Key': JSONBIN_KEY }
-      });
-      const data = await resp.json();
-      cloudOrders = data?.record?.orders || [];
-    } else {
-      return; /* no cloud configured */
-    }
-    if (cloudOrders.length) {
-      const local = JSON.parse(localStorage.getItem('mmorders') || '[]');
-      const merged = local.map(lo => {
-        const co = cloudOrders.find(c => c.id === lo.id);
-        return co ? { ...lo, status: co.status } : lo;
-      });
-      /* Add any orders in cloud not in local (from other sessions) */
-      cloudOrders.forEach(co => {
-        if (!merged.find(m => m.id === co.id)) merged.unshift(co);
-      });
-      localStorage.setItem('mmorders', JSON.stringify(merged));
-      orders = merged;
-    }
+    if (!USE_FIREBASE) return;
+    const resp = await fetch(`${FIREBASE_URL}/mmchats/orders.json`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (!data) return;
+    /* Firebase returns keyed object — convert to array */
+    const cloudOrders = Array.isArray(data) ? data : Object.values(data);
+    if (!cloudOrders.length) return;
+
+    /* Merge: update status of local orders from cloud */
+    const local = JSON.parse(localStorage.getItem('mmorders') || '[]');
+    const merged = local.map(lo => {
+      const co = cloudOrders.find(c => c.id === lo.id);
+      return co ? { ...lo, status: co.status, borzoTracking: co.borzoTracking } : lo;
+    });
+    localStorage.setItem('mmorders', JSON.stringify(merged));
+    orders = merged;
   } catch(e) { /* silent */ }
 }
 
@@ -1914,6 +1900,8 @@ window.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => document.getElementById('splash').classList.add('hidden'), 1600);
   setTimeout(() => { if (!currentUser) document.getElementById('authModal').classList.remove('hidden'); }, 2100);
   if (currentUser) updateUserNav();
+  loadShopSettings();
+  loadOutOfStock();
   updateCartBadge();
   renderMenu();
   document.getElementById('cartOverlay').addEventListener('click', closeCart);
@@ -2185,12 +2173,18 @@ function renderCartItems() {
   const DELIVERY_FEE = 50;
   const total    = cart.reduce((s,i) => s + i.price * i.qty, 0);
   const mrpTotal = cart.reduce((s,i) => s + i.mrp   * i.qty, 0);
-  const grandTotal = total + DELIVERY_FEE;
+  const discount   = getDiscount(total);
+  const grandTotal = total + DELIVERY_FEE - discount;
   foot.style.display = 'block';
   document.getElementById('cartSubtotal').textContent  = '₹' + total;
   document.getElementById('cartTotal').textContent     = '₹' + grandTotal;
   document.getElementById('checkoutTotal').textContent = '₹' + grandTotal;
   document.getElementById('savingsAmt').textContent    = '₹' + (mrpTotal - total);
+  /* Show discount row */
+  const discRow = document.getElementById('cartDiscountRow');
+  if (discRow) { discRow.style.display = discount>0?'flex':'none'; }
+  const discAmt = document.getElementById('cartDiscountAmt');
+  if (discAmt && discount>0) discAmt.textContent = '-₹'+discount;
   el.innerHTML = cart.map(item => `
     <div class="cart-item">
       <div class="c-veg"></div>
@@ -2210,8 +2204,14 @@ function renderCartItems() {
 /* ── 9. ORDER MODAL ───────────────────────────────────────── */
 function showOrderModal() {
   if (!cart.length) { showToast('Your cart is empty!', 'error'); return; }
-  if (!isShopOpenForOrder()) return;  /* show closed popup */
+  if (!isShopOpenForOrder()) return;
   if (window._outOfZone) { showToast('❌ Delivery not available in your area (>5km)', 'error'); return; }
+  const subtotal = cart.reduce((s,i) => s + i.price * i.qty, 0);
+  const minOrder = getMinOrder();
+  if (minOrder > 0 && subtotal < minOrder) {
+    showToast('Minimum order ₹' + minOrder + '. Add ₹' + (minOrder - subtotal) + ' more!', 'error');
+    return;
+  }
   closeCart();
   const total    = cart.reduce((s,i) => s + i.price * i.qty, 0);
   const mrpTotal = cart.reduce((s,i) => s + i.mrp   * i.qty, 0);
@@ -2666,7 +2666,8 @@ async function placeOrder() {
   const orderId      = 'MM' + Date.now().toString().slice(-6);
   const itemTotal    = cart.reduce((s,i) => s + i.price * i.qty, 0);
   const DELIVERY_FEE = 50;
-  const total        = itemTotal + DELIVERY_FEE;
+  const discountAmt  = getDiscount(itemTotal);
+  const total        = itemTotal + DELIVERY_FEE - discountAmt;
   const order   = {
     id: orderId,
     customer: { name, phone, addr },
@@ -2693,7 +2694,7 @@ async function placeOrder() {
     localStorage.setItem('mmuser', JSON.stringify(currentUser));
   }
 
-  cloudPush();  /* sync to cloud so admin sees it */
+  cloudPush(order);  /* push NEW order to Firebase so admin sees it instantly */
   cart = []; saveCart(); updateCartBadge(); closeOrderModal();
   document.getElementById('orderIdDisplay').textContent = 'Order ID: ' + orderId;
   document.getElementById('successOverlay').classList.remove('hidden');
@@ -2728,6 +2729,7 @@ function goToOrders() {
 /* ── 10. ORDERS PAGE ──────────────────────────────────────── */
 function renderOrders() {
   const all = JSON.parse(localStorage.getItem('mmorders') || '[]');
+  checkDeliveredAndRate(all);  /* show rating modal if delivered */
   const el  = document.getElementById('ordersList');
 
   /* ── Filter: show ONLY this customer's orders ──────────────
@@ -2798,6 +2800,101 @@ function renderOrders() {
   }).join('');
 }
 
+
+/* ── CUSTOMER RATING ─────────────────────────────────────── */
+let _selectedRating = 0;
+let _ratingOrderId  = null;
+
+function setRating(n) {
+  _selectedRating = n;
+  document.querySelectorAll('.star-rate').forEach((s,i) => {
+    s.classList.toggle('active', i < n);
+  });
+}
+
+function showRatingModal(orderId) {
+  _ratingOrderId  = orderId;
+  _selectedRating = 0;
+  document.querySelectorAll('.star-rate').forEach(s => s.classList.remove('active'));
+  const rev = document.getElementById('ratingReview');
+  if (rev) rev.value = '';
+  document.getElementById('ratingModal').classList.add('show');
+}
+
+async function submitRating() {
+  if (!_selectedRating) { showToast('Please select stars', 'error'); return; }
+  const review = document.getElementById('ratingReview')?.value.trim() || '';
+
+  /* Save rating to Firebase on the order */
+  if (FIREBASE_URL && _ratingOrderId) {
+    try {
+      await fetch(`${FIREBASE_URL}/mmchats/orders/${_ratingOrderId}.json`, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ rating: _selectedRating, review }),
+      });
+    } catch(e) {}
+  }
+  document.getElementById('ratingModal').classList.remove('show');
+  showToast('Thank you for rating! ⭐', 'success');
+}
+
+/* Show rating modal when order status becomes delivered */
+let _ratedOrderIds = JSON.parse(localStorage.getItem('mmRatedOrders') || '[]');
+function checkDeliveredAndRate(orders) {
+  const myPhone = localStorage.getItem('mmLastPhone') || '';
+  orders.forEach(o => {
+    if (o.status === 'delivered' && !_ratedOrderIds.includes(o.id)) {
+      const isMyOrder = myPhone && o.customer?.phone === myPhone;
+      if (isMyOrder) {
+        _ratedOrderIds.push(o.id);
+        localStorage.setItem('mmRatedOrders', JSON.stringify(_ratedOrderIds));
+        setTimeout(() => showRatingModal(o.id), 1000);
+      }
+    }
+  });
+}
+
+
+
+/* ── OUT OF STOCK CHECK (reads from Firebase) ───────────────── */
+let _outOfStockItems = {};
+async function loadOutOfStock() {
+  if (!FIREBASE_URL) return;
+  try {
+    const resp = await fetch(`${FIREBASE_URL}/mmchats/outOfStock.json`);
+    if (resp.ok) { const d = await resp.json(); if(d) _outOfStockItems = d; }
+  } catch(e) {}
+}
+function isItemOutOfStock(id) { return !!_outOfStockItems[id]; }
+
+/* ── SHOP SETTINGS (discount, min order) from Firebase ───── */
+let _shopSettings = {};
+
+async function loadShopSettings() {
+  try {
+    if (!FIREBASE_URL) return;
+    const resp = await fetch(`${FIREBASE_URL}/mmchats/settings.json`);
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data) _shopSettings = data;
+    }
+  } catch(e) {}
+}
+
+function getDiscount(subtotal) {
+  const d = _shopSettings?.discount;
+  if (!d || d.type === 'none' || !d.value) return 0;
+  if (d.minOrder && subtotal < d.minOrder) return 0;
+  if (d.type === 'percent') return Math.round(subtotal * d.value / 100);
+  if (d.type === 'flat')    return Math.min(d.value, subtotal);
+  return 0;
+}
+
+function getMinOrder() {
+  return parseInt(_shopSettings?.minOrder || 0);
+}
+
 /* ── 11. SPA PAGE SWITCH ──────────────────────────────────── */
 function showPage(page) {
   currentPage = page;
@@ -2842,7 +2939,7 @@ function showToast(msg, type = 'success') {
 
 const SHOP_OPEN_H  = 16;  /* 4 PM  */
 const SHOP_OPEN_M  = 30;
-const SHOP_CLOSE_H = 22;  /* 10 PM */
+const SHOP_CLOSE_H = 21;  /* 9 PM */
 const SHOP_CLOSE_M = 0;
 
 let _shopIsOpen         = true;
@@ -2906,6 +3003,18 @@ function applyShopStatus(isOpen) {
 
   if (!isOpen) {
     /* Shop CLOSED */
+    /* Update popup text based on mode */
+    const shopStatus = JSON.parse(localStorage.getItem('mmShopStatus') || '{}');
+    const sub = document.getElementById('scSubText');
+    if (sub) {
+      if (shopStatus.mode === 'holiday_until' && shopStatus.holidayUntil) {
+        const d = new Date(shopStatus.holidayUntil);
+        const ds = d.toLocaleDateString('en-IN', {weekday:'long', day:'numeric', month:'short'});
+        sub.textContent = `MM Chats is on holiday. We reopen on ${ds} at 4:30 PM.`;
+      } else {
+        sub.textContent = 'MM Chats Center is not taking orders right now.';
+      }
+    }
     if (!_userBrowsing) {
       overlay.classList.add('show');
       document.body.style.overflow = 'hidden';
@@ -2925,6 +3034,14 @@ function applyShopStatus(isOpen) {
 /** Read status from localStorage (same-device admin) + JSONBin (cross-device) */
 async function checkAndApplyShopStatus(silent = false) {
   let isOpen = isShopHours();   /* default: auto time check */
+  /* Check holiday mode first */
+  try {
+    const hu = parseInt(localStorage.getItem('mmHolidayUntil') || '0');
+    const hm = localStorage.getItem('mmShopMode');
+    if (hm === 'holiday_until' && hu > 0 && Date.now() < hu) {
+      isOpen = false;
+    }
+  } catch(e) {}
 
   /* ── 1. Firebase (cross-device, instant) ── */
   if (USE_FIREBASE) {
@@ -3068,7 +3185,7 @@ function startShopStatusPolling() {
       MM Chats Center is not taking orders right now.
     </div>
     <div class="sc-time-pill">
-      ⏰ Open Daily 4:30 PM – 10:00 PM
+      ⏰ Open Daily 4:30 PM – 9:00 PM
     </div>
     <div class="sc-countdown-box">
       <div class="sc-countdown-label">Opens in</div>
@@ -3085,7 +3202,36 @@ function startShopStatusPolling() {
 
 <!-- SHOP CLOSED BANNER (thin strip while browsing) -->
 <div id="shopClosedBanner">
-  🔴 Shop Closed · Orders not accepted · Opens 4:30 PM – 10:00 PM
+  🔴 Shop Closed · Orders not accepted · Opens 4:30 PM – 9:00 PM
+</div>
+
+
+<!-- Rating Modal -->
+<div class="rating-modal" id="ratingModal">
+  <div class="rating-sheet">
+    <div style="text-align:center">
+      <div style="font-size:2rem;margin-bottom:8px">🎉</div>
+      <div style="font-size:1rem;font-weight:800;color:var(--text)">Order Delivered!</div>
+      <div style="font-size:.82rem;color:var(--muted);margin-top:4px">How was your experience?</div>
+    </div>
+    <div class="rating-stars" id="ratingStars">
+      <span class="star-rate" onclick="setRating(1)">⭐</span>
+      <span class="star-rate" onclick="setRating(2)">⭐</span>
+      <span class="star-rate" onclick="setRating(3)">⭐</span>
+      <span class="star-rate" onclick="setRating(4)">⭐</span>
+      <span class="star-rate" onclick="setRating(5)">⭐</span>
+    </div>
+    <textarea id="ratingReview" placeholder="Tell us more (optional)..."
+      style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px;color:var(--text);font-family:inherit;font-size:.85rem;resize:none;outline:none;margin-bottom:12px;box-sizing:border-box" rows="2"></textarea>
+    <button onclick="submitRating()"
+      style="width:100%;padding:13px;background:linear-gradient(135deg,#1A9E8F,#0d8a7a);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:.9rem;cursor:pointer;font-family:inherit">
+      Submit Rating
+    </button>
+    <button onclick="document.getElementById('ratingModal').classList.remove('show')"
+      style="width:100%;padding:10px;background:transparent;border:none;color:var(--muted);font-size:.82rem;cursor:pointer;margin-top:6px">
+      Skip
+    </button>
+  </div>
 </div>
 
 </body>
