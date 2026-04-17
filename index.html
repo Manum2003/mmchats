@@ -1622,7 +1622,7 @@ body {
         <div class="offer-strip-left">
           <div class="offer-strip-tag">🏷 MM CHATS OFFER</div>
           <h3>₹30 cheaper than<br>Zomato &amp; Swiggy!</h3>
-          <p>Order directly · ₹50 delivery · Save ₹30/item vs Zomato</p>
+          <p>Order directly · Free delivery · Save ₹30/item vs Zomato</p>
         </div>
         <div class="offer-strip-price">
           <div class="was">Zomato ₹90</div>
@@ -1691,7 +1691,7 @@ body {
     <div class="bill-rows">
       <div class="bill-row"><span>Item Total</span><span class="val" id="cartSubtotal">₹0</span></div>
       <div class="bill-row" id="cartDiscountRow" style="display:none;color:#48C479"><span>🏷️ Discount</span><span class="val" id="cartDiscountAmt" style="color:#48C479">-₹0</span></div>
-      <div class="bill-row"><span>Delivery Fee</span><span class="val" style="color:var(--orange)">₹50</span></div>
+      <div class="bill-row" style="display:none"><span>Delivery Fee</span><span class="val">₹0</span></div>
       <div class="bill-row"><span>Taxes &amp; Charges</span><span class="val" style="color:var(--green)">₹0</span></div>
       <div class="bill-row main"><span>To Pay</span><span class="val" id="cartTotal">₹0</span></div>
     </div>
@@ -2170,11 +2170,11 @@ function renderCartItems() {
     foot.style.display = 'none';
     return;
   }
-  const DELIVERY_FEE = 50;
+  const DELIVERY_FEE = 0;
   const total    = cart.reduce((s,i) => s + i.price * i.qty, 0);
   const mrpTotal = cart.reduce((s,i) => s + i.mrp   * i.qty, 0);
   const discount   = getDiscount(total);
-  const grandTotal = total + DELIVERY_FEE - discount;
+  const grandTotal = total - discount;
   foot.style.display = 'block';
   document.getElementById('cartSubtotal').textContent  = '₹' + total;
   document.getElementById('cartTotal').textContent     = '₹' + grandTotal;
@@ -2218,8 +2218,8 @@ function showOrderModal() {
   const savings  = mrpTotal - total;
 
   /* Populate bill with new class names */
-  const DELIVERY_FEE = 50;
-  const grandTotal = total + DELIVERY_FEE;
+  const DELIVERY_FEE = 0;
+  const grandTotal = total;
   document.getElementById('omBill').innerHTML = `
     <div class="om-bill-rows">
       ${cart.map(i => `
@@ -2227,10 +2227,6 @@ function showOrderModal() {
           <span>${i.name} <span style="color:#aaa">×${i.qty}</span></span>
           <span style="font-weight:700">₹${i.price*i.qty}</span>
         </div>`).join('')}
-      <div class="om-bill-row">
-        <span style="color:#888">Delivery Fee</span>
-        <span style="color:var(--orange);font-weight:700">₹50</span>
-      </div>
     </div>
     <hr class="om-bill-divider">
     <div class="om-bill-total-row">
@@ -2430,7 +2426,7 @@ let paymentPollTimer  = null;
  */
 function payWithApp(app) {
   const itemTotal = cart.reduce((s,i) => s + i.price * i.qty, 0);
-  const total     = itemTotal + 50;          /* ₹50 delivery included */
+  const total     = itemTotal;               /* No delivery fee */
   const txnRef    = 'MMC' + Date.now().toString().slice(-8);
   const upiId     = 'paytmqr6vwajg@ptys';
   const payeeName = encodeURIComponent('MManu');
@@ -2620,8 +2616,8 @@ function goToPaymentStep() {
   const mrpTot  = cart.reduce((s,i) => s + i.mrp   * i.qty, 0);
   const savings = mrpTot - total;
 
-  const DELIVERY_FEE = 50;
-  const grandTotal = total + DELIVERY_FEE;
+  const DELIVERY_FEE = 0;
+  const grandTotal = total;
   document.getElementById('qrAmountDisplay').textContent = '₹' + grandTotal;
   document.getElementById('confirmAmtInline').textContent = grandTotal;
   const savEl = document.getElementById('qrSavingsDisplay');
@@ -2665,9 +2661,9 @@ async function placeOrder() {
   const gps     = await captureGPS();
   const orderId      = 'MM' + Date.now().toString().slice(-6);
   const itemTotal    = cart.reduce((s,i) => s + i.price * i.qty, 0);
-  const DELIVERY_FEE = 50;
+  const DELIVERY_FEE = 0;
   const discountAmt  = getDiscount(itemTotal);
-  const total        = itemTotal + DELIVERY_FEE - discountAmt;
+  const total        = itemTotal - discountAmt;
   const order   = {
     id: orderId,
     customer: { name, phone, addr },
