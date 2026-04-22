@@ -2276,8 +2276,8 @@ function closeOrderModal() {
 ══════════════════════════════════════════════════════════ */
 
 /* Shop location — Global Village Back Gate, Kengeri */
-const SHOP_LAT = 12.9062;
-const SHOP_LNG = 77.4853;
+const SHOP_LAT = 12.916316234742158;
+const SHOP_LNG = 77.50046687871254;
 const MAX_KM   = 5.0;
 
 /** Haversine distance in km between two lat/lng points */
@@ -2298,7 +2298,7 @@ function captureGPS() {
     navigator.geolocation.getCurrentPosition(
       pos => resolve({ lat:pos.coords.latitude, lng:pos.coords.longitude, accuracy:pos.coords.accuracy }),
       ()  => resolve(null),
-      { timeout:8000, maximumAge:30000, enableHighAccuracy:true }
+      { timeout:12000, maximumAge:0, enableHighAccuracy:true }
     );
   });
 }
@@ -2319,8 +2319,9 @@ async function checkDeliveryZone() {
   userGpsCache    = gps;
   userDistanceKm  = haversineKm(gps.lat, gps.lng, SHOP_LAT, SHOP_LNG);
   locationVerified = userDistanceKm <= MAX_KM;
-  /* Only hard-block on page load if clearly outside (e.g. another city) */
-  if (userDistanceKm > MAX_KM) {
+  /* Only hard-block on page load if clearly outside by more than 2km buffer
+     (GPS can be inaccurate by ~200-500m so give extra margin) */
+  if (userDistanceKm > (MAX_KM + 2)) {
     showOutOfZoneScreen(userDistanceKm);
   }
 }
@@ -2361,8 +2362,10 @@ async function checkOrderLocation() {
     locationVerified = true;
     strip.className  = 'loc-result-strip ok';
     resText.textContent = `✅ You are ${km.toFixed(1)} km away — Delivery available!`;
-    mapsLink.href         = mapsUrl;
-    mapsLink.textContent  = 'View on Maps →';
+    /* Show both customer pin and shop pin on map */
+    const shopToCustomer = `https://www.google.com/maps/dir/?api=1&origin=${SHOP_LAT},${SHOP_LNG}&destination=${gps.lat},${gps.lng}`;
+    mapsLink.href         = shopToCustomer;
+    mapsLink.textContent  = `📍 ${km.toFixed(1)} km from shop — View Route →`;
     mapsLink.style.display = '';
     btn.textContent = '✓ Verified';
     btn.style.background = '#059669';
@@ -2373,8 +2376,9 @@ async function checkOrderLocation() {
     strip.className  = 'loc-result-strip far';
     resText.innerHTML =
       `❌ You are <strong>${km.toFixed(1)} km</strong> away — Outside our 5 km delivery area.`;
-    mapsLink.href         = mapsUrl;
-    mapsLink.textContent  = 'View on Maps →';
+    const shopToFar = `https://www.google.com/maps/dir/?api=1&origin=${SHOP_LAT},${SHOP_LNG}&destination=${gps.lat},${gps.lng}`;
+    mapsLink.href         = shopToFar;
+    mapsLink.textContent  = `${km.toFixed(1)} km from shop — outside 5km zone`;
     mapsLink.style.display = '';
     btn.disabled   = false;
     btn.textContent = 'Retry';
@@ -3160,7 +3164,7 @@ function startShopStatusPolling() {
       style="padding:13px;background:#fff;border:1.5px solid #E0E0E0;border-radius:12px;color:#1C1C1C;font-weight:700;font-size:.88rem;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px">
       📞 Call Us: 8618752739
     </a>
-    <a href="https://www.google.com/maps/dir/?api=1&destination=12.9062,77.4853"
+    <a href="https://www.google.com/maps/dir/?api=1&destination=12.916316234742158,77.50046687871254"
       target="_blank" rel="noopener"
       style="padding:12px;background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:12px;color:#1D4ED8;font-weight:700;font-size:.84rem;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px">
       🗺️ Get Directions to Shop
