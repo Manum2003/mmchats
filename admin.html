@@ -595,7 +595,7 @@ async function pushStockStatus() {
       style="width:100%;padding:14px;background:linear-gradient(135deg,#E23744,#FC8019);border:none;border-radius:10px;color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">
       Login to Dashboard
     </button>
-    <p style="margin-top:12px;font-size:.74rem;color:#6B6B8A">Hi</p>
+    <p style="margin-top:12px;font-size:.74rem;color:#6B6B8A">mmchats / 2810</p>
   </div>
 </div>
 
@@ -756,8 +756,12 @@ async function pushStockStatus() {
   <div class="sidebar-bottom">
     <div>📍 Global Village, Kengeri</div>
     <div style="color:var(--green);margin-top:3px">📞 8618752739</div>
+    <button onclick="testCallMeBot()"
+      style="margin-top:8px;width:100%;padding:8px;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.3);border-radius:8px;color:#25D366;font-size:.74rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">
+      📱 Test WhatsApp
+    </button>
     <button onclick="adminLogout()"
-      style="margin-top:10px;width:100%;padding:8px;background:rgba(226,55,68,.12);border:1px solid rgba(226,55,68,.3);border-radius:8px;color:#E23744;font-size:.76rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">
+      style="margin-top:6px;width:100%;padding:8px;background:rgba(226,55,68,.12);border:1px solid rgba(226,55,68,.3);border-radius:8px;color:#E23744;font-size:.76rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">
       🔓 Logout
     </button>
   </div>
@@ -1242,38 +1246,97 @@ let bannerTimer=null;
 /* ══════════════════════════════════════════════════════════════
    AUTOMATIC WHATSAPP NOTIFICATION — CallMeBot (FREE)
    ─────────────────────────────────────────────────────────────
-   Setup (one time only — 2 minutes):
-   1. Open WhatsApp on your phone
-   2. Add contact: +34 621 331 709  (save as "CallMeBot")
-   3. Send this exact message to that contact:
-        I allow callmebot to send me messages
-   4. You will receive a reply with your APIKEY (e.g. 1234567)
-   5. Paste your APIKEY below ↓
+   SETUP (one time — 3 steps):
    
-   API URL: https://api.callmebot.com/whatsapp.php
-   Free, no registration, sends to YOUR number only
+   Step 1: Save this number in WhatsApp contacts:
+           +34 621 331 709   (name it: CallMeBot)
+   
+   Step 2: Send this EXACT message to CallMeBot on WhatsApp:
+           I allow callmebot to send me messages
+   
+   Step 3: Wait for reply with your APIKEY. If no reply after
+           10 min, send: Recover APIKey
+           If still no reply, try alternate number: +34 611 021 695
+   
+   Step 4: Paste APIKEY below ↓
+   
+   ⚠️ Phone must be: +91XXXXXXXXXX (with + and country code)
 ══════════════════════════════════════════════════════════════ */
 
-const CALLMEBOT_PHONE  = '918618752739';  /* 91 + your WhatsApp number */
-const CALLMEBOT_APIKEY = '';              /* ← paste your CallMeBot APIKEY here */
+const CALLMEBOT_PHONE  = '+918618752739'; /* + country code + number */
+const CALLMEBOT_APIKEY = '';              /* ← paste APIKEY here after setup */
 
 /** Send automatic WhatsApp message via CallMeBot */
 async function sendWhatsAppAuto(message) {
   if (!CALLMEBOT_APIKEY) {
-    console.warn('[WhatsApp] CALLMEBOT_APIKEY not set — skipping auto notification');
+    console.warn('[CallMeBot] APIKEY not set');
+    showAdminToast('⚠️ Set CALLMEBOT_APIKEY to get WhatsApp alerts');
     return false;
   }
   try {
+    /* CallMeBot requires URL-encoded text */
     const encodedMsg = encodeURIComponent(message);
-    const url = `https://api.callmebot.com/whatsapp.php?phone=${CALLMEBOT_PHONE}&text=${encodedMsg}&apikey=${CALLMEBOT_APIKEY}`;
-    /* Use no-cors since CallMeBot doesn't send CORS headers */
-    await fetch(url, { mode: 'no-cors' });
-    console.log('[WhatsApp] Auto notification sent ✅');
+    /* Use an image proxy to bypass CORS — loads as image request */
+    const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(CALLMEBOT_PHONE)}&text=${encodedMsg}&apikey=${CALLMEBOT_APIKEY}`;
+
+    /* Method 1: Image src trick — works even with CORS */
+    const img = new Image();
+    img.src = url;
+
+    /* Method 2: fetch as fallback */
+    fetch(url, { mode: 'no-cors', cache: 'no-cache' }).catch(()=>{});
+
+    console.log('[CallMeBot] Message sent to', CALLMEBOT_PHONE);
+    showAdminToast('📱 WhatsApp notification sent!');
     return true;
   } catch(e) {
-    console.warn('[WhatsApp] Auto notification failed:', e);
+    console.warn('[CallMeBot] Error:', e);
     return false;
   }
+}
+
+/** Test CallMeBot — tap to send test message */
+function testCallMeBot() {
+  if (!CALLMEBOT_APIKEY) {
+    /* Open step-by-step setup guide */
+    const old = document.getElementById('callmebotSetupModal');
+    if (old) old.remove();
+    const m = document.createElement('div');
+    m.id = 'callmebotSetupModal';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:flex-end;justify-content:center;font-family:Space Grotesk,sans-serif';
+    m.innerHTML = `
+      <div style="background:#1C1C27;border-radius:20px 20px 0 0;width:100%;max-width:440px;padding:22px 20px 36px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div style="font-size:1rem;font-weight:800;color:#fff">📱 Setup CallMeBot</div>
+          <button onclick="document.getElementById('callmebotSetupModal').remove()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer">✕</button>
+        </div>
+        <div style="background:#13131A;border-radius:12px;padding:14px;margin-bottom:12px">
+          <div style="font-size:.75rem;font-weight:800;color:#FFD700;margin-bottom:10px">3 steps to get WhatsApp alerts:</div>
+          <div style="font-size:.82rem;color:#9CA3AF;line-height:1.9">
+            <b style="color:#fff">Step 1:</b> Save this in WhatsApp contacts:<br>
+            <span style="color:#4A9EFF;font-family:monospace;font-size:.9rem">+34 621 331 709</span><br>
+            Name it: <b style="color:#fff">CallMeBot</b><br><br>
+            <b style="color:#fff">Step 2:</b> Send this EXACT message:<br>
+            <span style="color:#48C479;font-family:monospace">I allow callmebot to send me messages</span><br><br>
+            <b style="color:#fff">Step 3:</b> You receive your APIKEY. Paste it in admin.html:<br>
+            <span style="color:#FC8019;font-family:monospace">CALLMEBOT_APIKEY = 'your-key'</span>
+          </div>
+        </div>
+        <div style="background:rgba(252,128,25,.08);border:1px solid rgba(252,128,25,.2);border-radius:10px;padding:10px;margin-bottom:14px;font-size:.76rem;color:#FC8019">
+          ⚠️ No reply after 10 min? Send: <b>Recover APIKey</b><br>
+          Still nothing? Try alternate: <b>+34 611 021 695</b>
+        </div>
+        <a href="https://wa.me/34621331709?text=I%20allow%20callmebot%20to%20send%20me%20messages" target="_blank"
+          style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;border-radius:12px;padding:13px;text-decoration:none;color:#fff;font-weight:800;font-size:.9rem">
+          📱 Open WhatsApp to activate
+        </a>
+      </div>`;
+    document.body.appendChild(m);
+    m.addEventListener('click', e => { if(e.target===m) m.remove(); });
+    return;
+  }
+  sendWhatsAppAuto('New Order Alert Test! MM Chats Admin is working. CallMeBot connected successfully.');
+  showAdminToast('📱 Test message sent! Check your WhatsApp');
 }
 
 /** Request browser notification permission on first load */
@@ -1620,8 +1683,8 @@ function cancelOrder(orderId) {
 /* ── SHOP ADDRESS (for Rapido pickup) ─────────────────────── */
 const SHOP_NAME    = 'MM Chats Center';
 const SHOP_ADDRESS = 'Global Village Back Gate, Kengeri, Bangalore 560059';
-const SHOP_LAT_ADM = 12.9062;
-const SHOP_LNG_ADM = 77.4853;
+const SHOP_LAT_ADM = 12.916316234742158;
+const SHOP_LNG_ADM = 77.50046687871254;
 const SHOP_PHONE   = '8618752739';
 
 
@@ -2795,7 +2858,7 @@ function injectTestOrder(){
     customer:{name:'Test Customer',phone:'9999999999',addr:'Test Address, Kengeri'},
     items:[{id:15,name:'Congress Masala',cat:'masala',price:60,mrp:90,qty:2},{id:1,name:'Belpuri',cat:'belpuri',price:60,mrp:90,qty:1}],
     total:180,status:'pending',placedAt:new Date().toISOString(),paymentMethod:'COD',
-    gps:{lat:12.9062+(Math.random()-.5)*.01,lng:77.4853+(Math.random()-.5)*.01,accuracy:Math.round(10+Math.random()*30)},
+    gps:{lat:12.916316234742158+(Math.random()-.5)*.01,lng:77.50046687871254+(Math.random()-.5)*.01,accuracy:Math.round(10+Math.random()*30)},
   };
   const orders=getOrders();orders.unshift(o);saveOrders(orders);
   showNewOrderBanner(o);updatePendingBadge();
