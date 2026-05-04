@@ -29,23 +29,70 @@
 
 
 /* ── UPI App buttons ─────────────────────────────────────── */
+/* ══ AMAZON-STYLE UPI LIST ══════════════════════════════════ */
+.upi-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 16px;
+  cursor: pointer;
+  background: #fff;
+  transition: background .15s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.upi-row:active { background: #F5F5F5; }
+
+.upi-radio {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 2px solid #CCCCCC;
+  flex-shrink: 0;
+  position: relative;
+  transition: border-color .2s;
+}
+.upi-radio.selected {
+  border-color: #1A9E8F;
+  border-width: 6px;
+}
+
+.upi-name {
+  flex: 1;
+  font-size: .95rem;
+  font-weight: 700;
+  color: #111;
+  font-family: 'Nunito', sans-serif;
+}
+
+.upi-icon {
+  width: 36px; height: 36px;
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+
+.upi-divider {
+  height: 1px;
+  background: #F0F0F0;
+  margin: 0 16px;
+}
+
 .upi-app-btn {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  gap: 5px;
-  padding: 12px 8px;
+  gap: 6px;
+  padding: 14px 8px;
   background: #fff;
   border: 1.5px solid #E8E8E8;
-  border-radius: 12px;
+  border-radius: 16px;
   cursor: pointer;
   font-family: 'Nunito', sans-serif;
   font-size: .78rem; font-weight: 700;
   color: #374151;
-  transition: border-color .2s, background .2s, transform .1s;
-  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  transition: transform .15s, box-shadow .15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,.10);
+  min-height: 80px;
 }
-.upi-app-btn:hover  { border-color: var(--teal); background: #F0FDFA; }
-.upi-app-btn:active { transform: scale(.96); }
+.upi-app-btn:active { transform: scale(.94); }
 
 @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 
@@ -457,18 +504,26 @@ body {
   flex-shrink:0;
 }
 .mi-img-wrap {
-  width:112px; height:90px;
-  border-radius:12px;
-  overflow:hidden;
-  background:var(--bg);
-  position:relative;
-  flex-shrink:0;
+  width: 130px;
+  height: 110px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg);
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 3px 10px rgba(0,0,0,.12);
 }
 .mi-img-wrap img {
-  width:100%; height:100%; object-fit:cover;
-  transition:transform .35s;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform .35s;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
-.menu-item:hover .mi-img-wrap img { transform:scale(1.04); }
+.menu-item:hover .mi-img-wrap img { transform: scale(1.06); }
+.menu-item:active .mi-img-wrap img { transform: scale(0.98); }
 
 /* Placeholder when no image */
 .mi-img-wrap.no-img {
@@ -1484,33 +1539,104 @@ body {
           </div>
         </div>
 
-        <!-- UPI App Buttons — tap to open payment app directly -->
-        <div style="margin-bottom:10px">
-          <div style="font-size:.72rem;font-weight:800;color:#555;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">
-            Tap to pay instantly →
+        <!-- UPI Payment — Amazon style list -->
+        <div style="margin-bottom:12px">
+
+          <!-- Section label -->
+          <div style="font-size:.7rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;padding-left:2px">
+            YOUR UPI APPS
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <button class="upi-app-btn" onclick="payWithApp('phonepe')">
-              <span style="font-size:1.4rem">📲</span>
-              <span>PhonePe</span>
-            </button>
-            <button class="upi-app-btn" onclick="payWithApp('gpay')">
-              <span style="font-size:1.4rem">🅶</span>
-              <span>Google Pay</span>
-            </button>
-            <button class="upi-app-btn" onclick="payWithApp('paytm')">
-              <span style="font-size:1.4rem">📱</span>
-              <span>Paytm</span>
-            </button>
-            <button class="upi-app-btn" onclick="payWithApp('bhim')">
-              <span style="font-size:1.4rem">🏦</span>
-              <span>BHIM / Other</span>
-            </button>
-          </div>
+
+          <!-- UPI App list -->
+          <div id="upiAppList" style="background:#fff;border-radius:16px;overflow:hidden;border:1px solid #EBEBEB;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+
+            <!-- PhonePe -->
+            <label class="upi-row" onclick="selectUpiApp('phonepe',this)">
+              <div class="upi-radio" id="radio-phonepe"></div>
+              <span class="upi-name">PhonePe</span>
+              <!-- PhonePe logo -->
+              <svg class="upi-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                <rect width="40" height="40" rx="10" fill="#5f259f"/>
+                <text x="50%" y="54%" font-family="Arial" font-size="22" font-weight="900" fill="#fff" text-anchor="middle" dominant-baseline="middle">P</text>
+              </svg>
+            </label>
+            <div class="upi-divider"></div>
+
+            <!-- Google Pay -->
+            <label class="upi-row" onclick="selectUpiApp('gpay',this)">
+              <div class="upi-radio" id="radio-gpay"></div>
+              <span class="upi-name">Google Pay</span>
+              <!-- GPay logo -->
+              <svg class="upi-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                <rect width="40" height="40" rx="10" fill="#fff"/>
+                <circle cx="20" cy="20" r="14" fill="none" stroke="#EBEBEB" stroke-width="1"/>
+                <path d="M20 13a7 7 0 100 14A7 7 0 0020 13z" fill="#4285F4"/>
+                <path d="M20 13a7 7 0 010 14v-4a3 3 0 000-6V13z" fill="#34A853"/>
+                <path d="M13 20a7 7 0 017-7v4a3 3 0 00-3 3H13z" fill="#FBBC05"/>
+                <path d="M13 20h4a3 3 0 003 3v4a7 7 0 01-7-7z" fill="#EA4335"/>
+              </svg>
+            </label>
+            <div class="upi-divider"></div>
+
+            <!-- Paytm -->
+            <label class="upi-row" onclick="selectUpiApp('paytm',this)">
+              <div class="upi-radio" id="radio-paytm"></div>
+              <span class="upi-name">Paytm</span>
+              <!-- Paytm logo -->
+              <svg class="upi-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                <rect width="40" height="40" rx="10" fill="#00B9F1"/>
+                <text x="50%" y="54%" font-family="Arial" font-size="11" font-weight="900" fill="#fff" text-anchor="middle" dominant-baseline="middle">Paytm</text>
+              </svg>
+            </label>
+            <div class="upi-divider"></div>
+
+            <!-- BHIM UPI -->
+            <label class="upi-row" onclick="selectUpiApp('bhim',this)">
+              <div class="upi-radio" id="radio-bhim"></div>
+              <span class="upi-name">BHIM UPI</span>
+              <!-- BHIM logo -->
+              <svg class="upi-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                <rect width="40" height="40" rx="10" fill="#1a237e"/>
+                <text x="50%" y="54%" font-family="Arial" font-size="18" font-weight="900" fill="#FF9800" text-anchor="middle" dominant-baseline="middle">₹</text>
+              </svg>
+            </label>
+            <div class="upi-divider"></div>
+
+            <!-- Enter UPI ID -->
+            <label class="upi-row" onclick="selectUpiApp('upiid',this)" style="flex-wrap:wrap;gap:0">
+              <div style="display:flex;align-items:center;gap:14px;width:100%;padding-bottom:0" onclick="selectUpiApp('upiid',this.closest('.upi-row'))">
+                <div class="upi-radio" id="radio-upiid"></div>
+                <span class="upi-name">Enter UPI ID</span>
+                <!-- UPI logo -->
+                <svg class="upi-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="40" height="40" rx="10" fill="#fff" stroke="#EBEBEB"/>
+                  <text x="50%" y="42%" font-family="Arial" font-size="9" font-weight="900" fill="#FF6B00" text-anchor="middle" dominant-baseline="middle">UPI</text>
+                  <path d="M16 26l4-12 4 12M14 22h12" stroke="#FF6B00" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                </svg>
+              </div>
+              <!-- UPI ID input — shown when selected -->
+              <div id="upiIdInputWrap" style="display:none;width:100%;padding:8px 0 4px 36px">
+                <input id="upiIdInput" type="text" placeholder="yourname@upi  e.g. 9876543210@ybl"
+                  inputmode="email" autocomplete="off" autocapitalize="none"
+                  style="width:100%;padding:11px 14px;border:1.5px solid #1A9E8F;border-radius:10px;font-size:.9rem;font-family:'Nunito',sans-serif;outline:none;color:#111;background:#F8FFFE;box-sizing:border-box"
+                  oninput="validateUpiId(this.value)">
+                <div id="upiIdHint" style="font-size:.72rem;color:#888;margin-top:5px;padding-left:2px">
+                  Format: mobilenumber@upi · name@okaxis · name@ybl
+                </div>
+              </div>
+            </label>
+
+          </div><!-- /upiAppList -->
+
+          <!-- Pay Now button — appears after selection -->
+          <button id="upiPayNowBtn" onclick="payWithSelectedApp()" style="display:none;width:100%;margin-top:12px;padding:15px;background:linear-gradient(135deg,#1A9E8F,#0d8a7a);border:none;border-radius:14px;color:#fff;font-size:1rem;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;letter-spacing:.3px;box-shadow:0 4px 14px rgba(26,158,143,.35)">
+            Pay ₹<span id="upiPayNowAmt">0</span>
+          </button>
+
         </div>
 
         <!-- Divider -->
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
           <div style="flex:1;height:1px;background:#EBEBEB"></div>
           <span style="font-size:.7rem;color:#999;white-space:nowrap">or scan QR code</span>
           <div style="flex:1;height:1px;background:#EBEBEB"></div>
@@ -2554,7 +2680,8 @@ document.addEventListener('visibilitychange', () => {
       const p = JSON.parse(pending);
       /* Only auto-verify if within 10 minutes */
       if (Date.now() - p.ts < 600000) {
-        runVerificationUI(p.txnRef, p.total);
+        /* Small delay so page fully restores first */
+        setTimeout(() => runVerificationUI(p.txnRef, p.total), 800);
       }
     }
   }
@@ -2579,25 +2706,37 @@ function runVerificationUI(txnRef, amount) {
       </div>`;
   }
 
-  /* After 4 seconds, auto-confirm if user returned from payment app */
+  /* After 3 seconds — auto-confirm AND auto-place order */
   setTimeout(() => {
     paymentVerified = true;
     sessionStorage.removeItem('pendingTxn');
+
+    /* Show success */
     if (status) {
       status.innerHTML = `
         <div style="display:flex;align-items:center;gap:8px;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:10px;padding:10px 13px">
           <span style="font-size:1.1rem">✅</span>
           <div>
-            <div style="font-weight:800;font-size:.82rem;color:#059669">Payment Verified!</div>
-            <div style="font-size:.7rem;color:#10B981;margin-top:1px">₹${amount} received · Confirm to place order</div>
+            <div style="font-weight:800;font-size:.82rem;color:#059669">Payment Confirmed! Placing order…</div>
+            <div style="font-size:.7rem;color:#10B981;margin-top:1px">₹${amount} received · Order is being placed automatically</div>
           </div>
         </div>`;
     }
-    /* Auto-enable confirm button */
-    if (btn) btn.disabled = false;
+
+    /* Auto-tick checkbox and enable confirm button */
     if (chk) { chk.checked = true; chk.dispatchEvent(new Event('change')); }
-    showToast('✅ Payment verified! Tap Confirm to place order.');
-  }, 4000);
+    if (btn) btn.disabled = false;
+
+    /* ── AUTO PLACE ORDER — no tap needed ────────────────────
+       Wait 1 more second so user can see the success state,
+       then automatically place the order
+    ────────────────────────────────────────────────────────── */
+    setTimeout(() => {
+      showToast('✅ Payment done! Placing your order…');
+      placeOrder();
+    }, 1200);
+
+  }, 3000);
 }
 
 
@@ -2895,7 +3034,98 @@ function getMinOrder() {
   return parseInt(_shopSettings?.minOrder || 0);
 }
 
-/* ── 11. SPA PAGE SWITCH ──────────────────────────────────── */
+/* ── UPI LIST — Amazon style ─────────────────────────────── */
+let _selectedUpiApp = null;
+
+function selectUpiApp(app, rowEl) {
+  _selectedUpiApp = app;
+
+  /* Update all radio buttons */
+  document.querySelectorAll('.upi-radio').forEach(r => r.classList.remove('selected'));
+  const radio = document.getElementById('radio-' + app);
+  if (radio) radio.classList.add('selected');
+
+  /* Highlight selected row */
+  document.querySelectorAll('.upi-row').forEach(r => r.style.background = '#fff');
+  if (rowEl) rowEl.style.background = '#F0FFFE';
+
+  /* Show/hide UPI ID input */
+  const inputWrap = document.getElementById('upiIdInputWrap');
+  if (inputWrap) inputWrap.style.display = app === 'upiid' ? 'block' : 'none';
+  if (app === 'upiid') {
+    setTimeout(() => document.getElementById('upiIdInput')?.focus(), 100);
+  }
+
+  /* Show Pay Now button */
+  const payBtn = document.getElementById('upiPayNowBtn');
+  const payAmt = document.getElementById('upiPayNowAmt');
+  if (payBtn) {
+    payBtn.style.display = 'block';
+    const total = document.getElementById('qrAmountDisplay')?.textContent?.replace('₹','') || '0';
+    if (payAmt) payAmt.textContent = total;
+  }
+
+  /* Enable confirm button */
+  enableConfirmIfReady();
+}
+
+function validateUpiId(val) {
+  const hint = document.getElementById('upiIdHint');
+  const input = document.getElementById('upiIdInput');
+  const isValid = /^[a-zA-Z0-9.\-_]{3,}@[a-zA-Z]{3,}$/.test(val.trim());
+  if (hint) {
+    hint.textContent = isValid ? '✅ Valid UPI ID' : 'Format: mobilenumber@upi · name@okaxis · name@ybl';
+    hint.style.color = isValid ? '#1A9E8F' : '#888';
+  }
+  if (input) {
+    input.style.borderColor = val.length > 3 ? (isValid ? '#1A9E8F' : '#E23744') : '#1A9E8F';
+  }
+  enableConfirmIfReady();
+}
+
+function payWithSelectedApp() {
+  if (!_selectedUpiApp) return;
+
+  if (_selectedUpiApp === 'upiid') {
+    const upiVal = document.getElementById('upiIdInput')?.value.trim() || '';
+    if (!/^[a-zA-Z0-9.\-_]{3,}@[a-zA-Z]{3,}$/.test(upiVal)) {
+      showToast('Please enter a valid UPI ID', 'error');
+      document.getElementById('upiIdInput')?.focus();
+      return;
+    }
+    /* Launch generic UPI with entered ID */
+    const itemTotal = cart.reduce((s,i) => s + i.price * i.qty, 0);
+    const txnRef    = 'MMC' + Date.now().toString().slice(-8);
+    const upiLink   = `upi://pay?pa=${encodeURIComponent(upiVal)}&pn=${encodeURIComponent('MManu')}&am=${itemTotal}&cu=INR&tn=${encodeURIComponent('MM Chats ' + txnRef)}&tr=${txnRef}`;
+    currentOrderTotal = itemTotal;
+    currentTxnRef     = txnRef;
+    sessionStorage.setItem('pendingTxn', JSON.stringify({ txnRef, total: itemTotal, ts: Date.now() }));
+    const a = document.createElement('a');
+    a.href = upiLink; a.style.display = 'none';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => a.remove(), 500);
+    showPaymentWaiting(itemTotal);
+    setTimeout(() => startPaymentVerification(txnRef, itemTotal), 2000);
+  } else {
+    payWithApp(_selectedUpiApp);
+  }
+}
+
+function showPaymentPending() {
+  const msg = document.getElementById('paymentStatusMsg');
+  if (msg) {
+    msg.style.display = 'block';
+    msg.innerHTML = `<div style="background:#FFF9E6;border:1px solid #FFD700;border-radius:10px;padding:10px 12px;font-size:.82rem;color:#856404;text-align:center">
+      ⏳ Complete payment in your UPI app, then tick the checkbox below
+    </div>`;
+  }
+}
+
+function enableConfirmIfReady() {
+  /* Already handled by payment confirm checkbox */
+}
+
+/* ── 11. SPA PAGE SWITCH ─────────────────────────────────── */
 function showPage(page) {
   currentPage = page;
   document.getElementById('menu-page').style.display    = page === 'menu'   ? 'block' : 'none';
