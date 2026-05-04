@@ -1266,32 +1266,39 @@ let bannerTimer=null;
 const CALLMEBOT_PHONE  = '+918618752739'; /* + country code + number */
 const CALLMEBOT_APIKEY = '';              /* ← paste APIKEY here after setup */
 
-/** Send automatic WhatsApp message via CallMeBot */
+/** Send WhatsApp notification — opens WhatsApp with pre-filled order message */
 async function sendWhatsAppAuto(message) {
-  if (!CALLMEBOT_APIKEY) {
-    console.warn('[CallMeBot] APIKEY not set');
-    showAdminToast('⚠️ Set CALLMEBOT_APIKEY to get WhatsApp alerts');
-    return false;
+  /* Method 1: CallMeBot automatic (if APIKEY is set) */
+  if (CALLMEBOT_APIKEY) {
+    try {
+      const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(CALLMEBOT_PHONE)}&text=${encodeURIComponent(message)}&apikey=${CALLMEBOT_APIKEY}`;
+      const img = new Image();
+      img.src = url;
+      fetch(url, { mode: 'no-cors', cache: 'no-cache' }).catch(()=>{});
+      console.log('[CallMeBot] Auto WA sent ✅');
+    } catch(e) { console.warn('[CallMeBot]', e); }
   }
-  try {
-    /* CallMeBot requires URL-encoded text */
-    const encodedMsg = encodeURIComponent(message);
-    /* Use an image proxy to bypass CORS — loads as image request */
-    const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(CALLMEBOT_PHONE)}&text=${encodedMsg}&apikey=${CALLMEBOT_APIKEY}`;
 
-    /* Method 1: Image src trick — works even with CORS */
-    const img = new Image();
-    img.src = url;
-
-    /* Method 2: fetch as fallback */
-    fetch(url, { mode: 'no-cors', cache: 'no-cache' }).catch(()=>{});
-
-    console.log('[CallMeBot] Message sent to', CALLMEBOT_PHONE);
-    showAdminToast('📱 WhatsApp notification sent!');
-    return true;
-  } catch(e) {
-    console.warn('[CallMeBot] Error:', e);
-    return false;
+  /* Method 2: Always open WhatsApp with message pre-filled (works instantly, no API key needed) */
+  /* This opens a WhatsApp notification to yourself — one tap to confirm */
+  const waUrl = `https://wa.me/${CALLMEBOT_PHONE.replace('+','')}?text=${encodeURIComponent(message)}`;
+  
+  /* Store for the banner button */
+  window._lastWaUrl = waUrl;
+  
+  /* Show WA button in banner so admin can tap to open */
+  const bannerText = document.getElementById('bannerText');
+  if (bannerText) {
+    const existing = document.getElementById('waBannerLink');
+    if (!existing) {
+      const waBtn = document.createElement('a');
+      waBtn.id = 'waBannerLink';
+      waBtn.href = waUrl;
+      waBtn.target = '_blank';
+      waBtn.style.cssText = 'background:#25D366;color:#fff;padding:5px 12px;border-radius:8px;font-size:.75rem;font-weight:800;text-decoration:none;margin-left:8px;white-space:nowrap';
+      waBtn.textContent = '📱 WA Alert';
+      bannerText.parentNode.appendChild(waBtn);
+    }
   }
 }
 
@@ -1543,26 +1550,41 @@ async function pullAndSync() {
   const firebaseOrders = await cloudPullAdmin();
 
   if (firebaseOrders !== null) {
-    /* Firebase returned data — use it as master */
-    let hadNew = false;
+    /* ── SAFE MERGE: never let orders disappear ──────────────
+       Only add/update orders from Firebase.
+       Never remove orders that are already in cache.
+       Orders only leave cache when explicitly marked delivered/cancelled.
+    ────────────────────────────────────────────────────────── */
 
+    /* Detect new orders */
     firebaseOrders.forEach(fo => {
       if (!lastKnownIds.has(fo.id)) {
-        /* Brand new order — alert! */
         lastKnownIds.add(fo.id);
-        hadNew = true;
         showNewOrderBanner(fo);
         notifyNewOrder(fo);
       }
     });
 
-    /* Replace cache entirely with Firebase data */
-    _ordersCache = firebaseOrders;
+    /* Merge: update existing, add new — never delete */
+    const mergedMap = {};
 
-    /* Update localStorage cache for offline fallback */
+    /* Start with current cache */
+    _ordersCache.forEach(o => { mergedMap[o.id] = o; });
+
+    /* Overlay with Firebase data (updates status etc) */
+    firebaseOrders.forEach(fo => {
+      if (fo && fo.id) mergedMap[fo.id] = fo;
+    });
+
+    /* Only replace cache if merged result is valid */
+    const merged = Object.values(mergedMap);
+    if (merged.length > 0 || _ordersCache.length === 0) {
+      _ordersCache = merged;
+    }
+
+    /* Persist to localStorage */
     try { localStorage.setItem('mmorders', JSON.stringify(_ordersCache)); } catch(e) {}
 
-    /* Also update today's revenue from Firebase orders */
     updateTodayRevenue();
 
     /* Re-render current view */
@@ -1572,19 +1594,16 @@ async function pullAndSync() {
     updatePendingBadge();
 
   } else {
-    /* Firebase unreachable — use localStorage cache as fallback */
-    const stored = JSON.parse(localStorage.getItem('mmorders') || '[]');
-    stored.forEach(o => {
-      if (!lastKnownIds.has(o.id)) {
-        lastKnownIds.add(o.id);
-        showNewOrderBanner(o);
+    /* Firebase unreachable — keep existing cache, restore from localStorage */
+    if (_ordersCache.length === 0) {
+      const stored = JSON.parse(localStorage.getItem('mmorders') || '[]');
+      if (stored.length) {
+        _ordersCache = stored;
+        stored.forEach(o => { lastKnownIds.add(o.id); });
       }
-    });
-    if (stored.length && !_ordersCache.length) {
-      _ordersCache = stored;
-      if (currentSection === 'dashboard') renderDashboard();
-      updatePendingBadge();
     }
+    if (currentSection === 'dashboard') renderDashboard();
+    updatePendingBadge();
   }
 }
 
@@ -2008,6 +2027,31 @@ function bookRapido(order) {
   }, 1500);
 }
 
+
+/* ── RAPIDO PARCEL DEEP LINK ────────────────────────────────── */
+function openRapidoParcel(pickupEnc, dropEnc) {
+  /* First copy pickup address to clipboard for easy paste */
+  navigator.clipboard.writeText(decodeURIComponent(pickupEnc)).catch(()=>{});
+  
+  /* Try Android app deep link first */
+  const appLink = `rapido://parcel?pickup_address=${pickupEnc}&drop_address=${dropEnc}`;
+  const webLink = `https://rapido.bike/book?type=parcel&pickup=${pickupEnc}&drop=${dropEnc}`;
+  
+  /* Create hidden iframe to try app link without leaving page */
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = appLink;
+  document.body.appendChild(iframe);
+  
+  /* After 1.5s if app didn't open, open web version */
+  setTimeout(() => {
+    document.body.removeChild(iframe);
+    window.open(webLink, '_blank');
+  }, 1500);
+  
+  showAdminToast('🛵 Opening Rapido Parcel...');
+}
+
 /* Show Rapido semi-auto modal — auto-fills pickup + drop, opens app */
 function showRapidoModal(order) {
   if (!order) return;
@@ -2017,15 +2061,21 @@ function showRapidoModal(order) {
   const items     = (order.items||[]).map(i => i.name + '×' + i.qty).join(', ');
   const amt       = order.total || 0;
 
-  /* Build smart Rapido URLs with auto-filled addresses */
-  const pickupEnc  = encodeURIComponent(SHOP_ADDRESS);
-  const dropEnc    = encodeURIComponent(custAddr + ', Bangalore');
+  /* Rapido Parcel — direct link that opens parcel booking */
+  const pickupText = SHOP_ADDRESS;
+  const dropText   = custAddr + ', Bangalore';
+  const pickupEnc  = encodeURIComponent(pickupText);
+  const dropEnc    = encodeURIComponent(dropText);
 
-  /* Rapido Box (parcel delivery) deep link */
-  const rapidoBox  = `https://www.rapido.bike/book-parcel?pickup=${pickupEnc}&drop=${dropEnc}`;
+  /* Rapido parcel app deep link (Android) */
+  const rapidoAppLink = `rapido://parcel?pickup_address=${pickupEnc}&drop_address=${dropEnc}`;
+  /* Rapido web fallback */
+  const rapidoWebLink = `https://rapido.bike/book?type=parcel&pickup=${pickupEnc}&drop=${dropEnc}`;
+  /* Universal link — tries app first, falls back to web */
+  const rapidoBox = rapidoWebLink;
 
   /* Google Maps route from shop to customer (navigate button) */
-  const mapsRoute  = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(SHOP_ADDRESS)}&destination=${encodeURIComponent(custAddr + ' Bangalore')}`;
+  const mapsRoute = `https://www.google.com/maps/dir/?api=1&origin=${SHOP_LAT_ADM},${SHOP_LNG_ADM}&destination=${encodeURIComponent(custAddr + ', Bangalore')}&travelmode=driving`;
 
   /* WhatsApp to find a delivery boy manually */
   const waMsg = encodeURIComponent(
@@ -2111,11 +2161,11 @@ function showRapidoModal(order) {
       <!-- Action buttons -->
       <div style="display:flex;flex-direction:column;gap:9px">
 
-        <!-- Open Rapido with pre-filled link -->
-        <a href="${rapidoBox}" target="_blank"
-          style="display:flex;align-items:center;justify-content:center;gap:10px;background:#FFD700;border-radius:12px;padding:14px;text-decoration:none;font-weight:900;font-size:.95rem;color:#000">
-          🛵 Open Rapido (Auto-Fill Addresses)
-        </a>
+        <!-- Open Rapido Parcel with pre-filled addresses -->
+        <button onclick="openRapidoParcel('${pickupEnc}','${dropEnc}')"
+          style="display:flex;align-items:center;justify-content:center;gap:10px;background:#FFD700;border-radius:12px;padding:14px;font-weight:900;font-size:.95rem;color:#000;border:none;cursor:pointer;width:100%;font-family:Space Grotesk,sans-serif">
+          🛵 Open Rapido Parcel (Auto-Fill)
+        </button>
 
         <!-- Navigate on Maps -->
         <a href="${mapsRoute}" target="_blank"
@@ -2316,39 +2366,179 @@ function borzoBookById(id) {
   if (o) showRapidoModal(o);   /* Semi-auto Rapido with pre-filled addresses */
 }
 
-/* ── KOT PRINT ─────────────────────────────────────────────── */
-function printKOT(order) {
-  const now   = new Date().toLocaleString('en-IN');
-  const items = order.items.map(i =>
-    `<tr><td style="padding:3px 0">${i.name}</td><td style="text-align:right;padding:3px 0">${i.qty}</td><td style="text-align:right;padding:3px 0">₹${i.price*i.qty}</td></tr>`
-  ).join('');
-  const total = order.total || order.items.reduce((s,i)=>s+i.price*i.qty,0);
+/* ── KOT PRINT — Bluetooth (ESC/POS) + Screen fallback ───── */
 
-  document.getElementById('kotContent').innerHTML = `
+/* EZO / Bluetooth ESC/POS printer support */
+let _btPrinter = null; /* cached Bluetooth device */
+
+/* ESC/POS command builder */
+function escpos(order) {
+  const enc = new TextEncoder();
+  const now = new Date().toLocaleString('en-IN');
+  const total = order.total || (order.items||[]).reduce((s,i)=>s+(i.price||0)*(i.qty||1),0);
+  
+  const ESC = 0x1B; const GS = 0x1D; const LF = 0x0A; const CUT = [GS,0x56,0x41,0x03];
+  
+  /* Build text lines */
+  const lines = [
+    '================================',
+    '       MM CHATS CENTER          ',
+    '  Global Village, Kengeri BLR   ',
+    '       Ph: 8618752739           ',
+    '================================',
+    `KOT: #${order.id}`,
+    `Time: ${now}`,
+    `Customer: ${order.customer?.name||''}`,
+    `Phone: ${order.customer?.phone||''}`,
+    `Addr: ${(order.customer?.addr||'').slice(0,28)}`,
+    '--------------------------------',
+    'Item              Qty    Amount',
+    '--------------------------------',
+    ...(order.items||[]).map(i => {
+      const name = i.name.slice(0,16).padEnd(16);
+      const qty  = String(i.qty||1).padStart(3);
+      const amt  = ('Rs.'+((i.price||0)*(i.qty||1))).padStart(8);
+      return `${name} ${qty} ${amt}`;
+    }),
+    '--------------------------------',
+    `TOTAL:              Rs.${total}`.padStart(32),
+    '================================',
+    '      Thank You! Visit Again    ',
+    '           MM Chats :)          ',
+    '================================',
+    '', '', ''  /* feed lines before cut */
+  ];
+  
+  /* Convert to bytes */
+  const init   = [ESC, 0x40];                    /* Initialize */
+  const bold   = [ESC, 0x45, 0x01];              /* Bold ON */
+  const normal = [ESC, 0x45, 0x00];              /* Bold OFF */
+  const center = [ESC, 0x61, 0x01];              /* Center align */
+  const left   = [ESC, 0x61, 0x00];              /* Left align */
+  
+  const NL = '\n';
+  const bytes = [...init, ...center, ...bold];
+  lines.forEach((line, idx) => {
+    if (idx === 0 || idx === lines.length-4) bytes.push(...normal);
+    const lineBytes = Array.from(enc.encode(line + NL));
+    bytes.push(...lineBytes);
+  });
+  bytes.push(...CUT);
+  return new Uint8Array(bytes);
+}
+
+async function printKOTBluetooth(order) {
+  try {
+    /* Check Web Bluetooth support */
+    if (!navigator.bluetooth) {
+      showAdminToast('❌ Bluetooth not supported — use Chrome on Android/PC');
+      return false;
+    }
+    
+    showAdminToast('🔵 Connecting to printer...');
+    
+    /* Connect to printer — shows device picker */
+    if (!_btPrinter || !_btPrinter.gatt.connected) {
+      _btPrinter = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: [
+          '000018f0-0000-1000-8000-00805f9b34fb', /* ESC/POS standard */
+          'e7810a71-73ae-499d-8c15-faa9aef0c3f2', /* Common BT printer */
+          '49535343-fe7d-4ae5-8fa9-9fafd205e455', /* Another common UUID */
+          '000003e1-0000-1000-8000-00805f9b34fb', /* EZO printers */
+        ]
+      });
+    }
+    
+    const server  = await _btPrinter.gatt.connect();
+    showAdminToast('🔵 Connected! Printing...');
+    
+    /* Find the right service and characteristic */
+    const services = await server.getPrimaryServices();
+    let characteristic = null;
+    
+    for (const service of services) {
+      const chars = await service.getCharacteristics();
+      for (const char of chars) {
+        if (char.properties.write || char.properties.writeWithoutResponse) {
+          characteristic = char;
+          break;
+        }
+      }
+      if (characteristic) break;
+    }
+    
+    if (!characteristic) {
+      showAdminToast('❌ Printer characteristic not found');
+      return false;
+    }
+    
+    /* Send ESC/POS bytes in chunks (BT max packet = 512 bytes) */
+    const data   = escpos(order);
+    const chunk  = 512;
+    for (let i = 0; i < data.length; i += chunk) {
+      const slice = data.slice(i, i + chunk);
+      if (characteristic.properties.writeWithoutResponse) {
+        await characteristic.writeValueWithoutResponse(slice);
+      } else {
+        await characteristic.writeValue(slice);
+      }
+      await new Promise(r => setTimeout(r, 50)); /* small delay between chunks */
+    }
+    
+    showAdminToast('✅ KOT Printed via Bluetooth!');
+    return true;
+    
+  } catch(err) {
+    if (err.name === 'NotFoundError') {
+      showAdminToast('❌ No printer selected');
+    } else {
+      console.error('[BT Print]', err);
+      showAdminToast('❌ Bluetooth error: ' + err.message);
+    }
+    return false;
+  }
+}
+
+function buildKOTHtml(order) {
+  const now   = new Date().toLocaleString('en-IN');
+  const total = order.total || (order.items||[]).reduce((s,i)=>s+(i.price||0)*(i.qty||1),0);
+  const items = (order.items||[]).map(i =>
+    `<tr><td style="padding:3px 0">${i.name}</td><td style="text-align:center;padding:3px 0">${i.qty}</td><td style="text-align:right;padding:3px 0">₹${(i.price||0)*(i.qty||1)}</td></tr>`
+  ).join('');
+  return `
     <div style="text-align:center;border-bottom:2px dashed #000;padding-bottom:8px;margin-bottom:8px">
-      <h2 style="margin:0;font-size:1.2rem">MM CHATS CENTER</h2>
+      <h2 style="margin:0;font-size:1.2rem;font-weight:900">MM CHATS CENTER</h2>
       <p style="margin:2px 0;font-size:.8rem">Global Village Back Gate, Kengeri</p>
       <p style="margin:2px 0;font-size:.8rem">📞 8618752739</p>
     </div>
-    <p style="margin:4px 0;font-size:.85rem"><b>KOT #${order.id}</b></p>
-    <p style="margin:2px 0;font-size:.8rem">Customer: ${order.customer.name}</p>
-    <p style="margin:2px 0;font-size:.8rem">Phone: ${order.customer.phone}</p>
-    <p style="margin:2px 0;font-size:.8rem">Address: ${order.customer.addr}</p>
-    <p style="margin:2px 0;font-size:.8rem">Time: ${now}</p>
+    <p style="margin:4px 0;font-size:.85rem;font-weight:700">KOT #${order.id}</p>
+    <p style="margin:2px 0;font-size:.78rem">Customer: ${order.customer?.name||''}</p>
+    <p style="margin:2px 0;font-size:.78rem">Phone: ${order.customer?.phone||''}</p>
+    <p style="margin:2px 0;font-size:.78rem">Address: ${order.customer?.addr||''}</p>
+    <p style="margin:2px 0;font-size:.78rem">Time: ${now}</p>
     <hr style="border:1px dashed #000;margin:8px 0">
-    <table style="width:100%;font-size:.85rem;border-collapse:collapse">
-      <tr style="border-bottom:1px dashed #000">
+    <table style="width:100%;font-size:.82rem;border-collapse:collapse">
+      <tr style="border-bottom:1px dashed #000;font-weight:700">
         <th style="text-align:left;padding:3px 0">Item</th>
-        <th style="text-align:right;padding:3px 0">Qty</th>
+        <th style="text-align:center;padding:3px 0">Qty</th>
         <th style="text-align:right;padding:3px 0">Amt</th>
       </tr>
       ${items}
     </table>
     <hr style="border:1px dashed #000;margin:8px 0">
-    <p style="text-align:right;font-size:.9rem"><b>Total: ₹${total}</b></p>
-    <p style="text-align:center;font-size:.75rem;margin-top:8px">Thank you! Visit Again 🙏</p>
-  `;
-  window.print();
+    <p style="text-align:right;font-size:.95rem;font-weight:900">Total: ₹${total}</p>
+    <p style="text-align:center;font-size:.75rem;margin-top:10px">Thank you! Visit Again 🙏</p>`;
+}
+
+async function printKOT(order) {
+  /* Try Bluetooth first — fall back to screen print */
+  const btOk = await printKOTBluetooth(order);
+  if (!btOk) {
+    /* Fallback: screen/USB print */
+    document.getElementById('kotContent').innerHTML = buildKOTHtml(order);
+    window.print();
+  }
 }
 
 /* ── ADMIN TOAST ─────────────────────────────────────────── */
