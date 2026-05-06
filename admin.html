@@ -188,6 +188,31 @@ tr:hover td{background:rgba(255,255,255,.02);}
 /* ══ SCROLLBAR ════════════════════════════════════════════ */
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:#0f0f1a;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 
+/* ── ORDER STATUS TABS (Zomato style) ─────────────────────── */
+.order-tab {
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border-radius: 40px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: .8rem; font-weight: 700;
+  cursor: pointer;
+  transition: .15s;
+  display: inline-flex; align-items: center; gap: 6px;
+  white-space: nowrap;
+}
+.order-tab:hover { border-color: var(--orange); color: var(--text); }
+.order-tab.active-tab { background: #fff; color: #111; border-color: #fff; }
+.tab-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 20px; background: #444; color: #fff;
+  font-size: .65rem; font-weight: 900;
+}
+.order-tab.active-tab .tab-badge { background: #E23744; }
+
 /* ══ BOTTOM NAV (mobile only) ════════════════════════════ */
 .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--border);z-index:600;padding-bottom:env(safe-area-inset-bottom,0);}
 .bottom-nav-inner{display:flex;justify-content:space-around;padding:6px 0 4px;}
@@ -758,7 +783,7 @@ async function pushStockStatus() {
     <div style="color:var(--green);margin-top:3px">📞 8618752739</div>
     <button onclick="testCallMeBot()"
       style="margin-top:8px;width:100%;padding:8px;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.3);border-radius:8px;color:#25D366;font-size:.74rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">
-      📱 Test WhatsApp
+      📱 Test Telegram
     </button>
     <button onclick="adminLogout()"
       style="margin-top:6px;width:100%;padding:8px;background:rgba(226,55,68,.12);border:1px solid rgba(226,55,68,.3);border-radius:8px;color:#E23744;font-size:.76rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">
@@ -820,16 +845,34 @@ async function pushStockStatus() {
     </div>
   </section>
 
-  <!-- ACTIVE ORDERS -->
+  <!-- ACTIVE ORDERS — Zomato style tabs -->
   <section class="admin-section" id="section-orders">
     <div class="page-header">
-      <div><h2>📦 Active Orders</h2><p>Pending · Preparing · Out for Delivery</p></div>
+      <div><h2>📦 Active Orders</h2><p>Filter by status</p></div>
       <span style="font-size:.82rem;color:var(--muted)" id="orderCountLabel"></span>
     </div>
-    <div class="s-card">
-      <div class="s-card-head"><h3>Manage Orders</h3></div>
-      <div class="order-list" id="activeOrdersWrap"></div>
+
+    <!-- Status filter tabs (Zomato style) -->
+    <div style="display:flex;gap:8px;overflow-x:auto;padding:0 0 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch">
+      <button class="order-tab active-tab" id="tab-all"        onclick="filterOrderTab('all')">
+        All <span class="tab-badge" id="badge-all">0</span>
+      </button>
+      <button class="order-tab" id="tab-pending"     onclick="filterOrderTab('pending')">
+        Pending <span class="tab-badge" id="badge-pending">0</span>
+      </button>
+      <button class="order-tab" id="tab-preparing"  onclick="filterOrderTab('preparing')">
+        Preparing <span class="tab-badge" id="badge-preparing">0</span>
+      </button>
+      <button class="order-tab" id="tab-ready"      onclick="filterOrderTab('ready')">
+        Ready <span class="tab-badge" id="badge-ready">0</span>
+      </button>
+      <button class="order-tab" id="tab-out"        onclick="filterOrderTab('out_for_delivery')">
+        Out for Delivery <span class="tab-badge" id="badge-out">0</span>
+      </button>
     </div>
+
+    <!-- Orders list -->
+    <div class="order-list" id="activeOrdersWrap"></div>
   </section>
 
   <!-- ORDER HISTORY -->
@@ -1244,107 +1287,111 @@ let bannerTimer=null;
 ══════════════════════════════════════════════════════════════ */
 
 /* ══════════════════════════════════════════════════════════════
-   AUTOMATIC WHATSAPP NOTIFICATION — CallMeBot (FREE)
+   TELEGRAM BOT NOTIFICATION — INSTANT & FREE
    ─────────────────────────────────────────────────────────────
-   SETUP (one time — 3 steps):
+   Setup (one time — already done!):
+   Bot: @Bgytwhshsjsjwjsnsbsbot
+   Token: already set below ✅
    
-   Step 1: Save this number in WhatsApp contacts:
-           +34 621 331 709   (name it: CallMeBot)
-   
-   Step 2: Send this EXACT message to CallMeBot on WhatsApp:
-           I allow callmebot to send me messages
-   
-   Step 3: Wait for reply with your APIKEY. If no reply after
-           10 min, send: Recover APIKey
-           If still no reply, try alternate number: +34 611 021 695
-   
-   Step 4: Paste APIKEY below ↓
-   
-   ⚠️ Phone must be: +91XXXXXXXXXX (with + and country code)
+   Get your CHAT ID:
+   1. Open Telegram → go to t.me/Bgytwhshsjsjwjsnsbsbot
+   2. Send any message (e.g. /start)
+   3. Open in browser:
+      https://api.telegram.org/bot8666570687:AAGc48MH9lQY8Qs3snFx69W-qJyB2uhsXUk/getUpdates
+   4. Find "id" inside "chat" → paste below as TELEGRAM_CHAT_ID
 ══════════════════════════════════════════════════════════════ */
 
-const CALLMEBOT_PHONE  = '+918618752739'; /* + country code + number */
-const CALLMEBOT_APIKEY = '';              /* ← paste APIKEY here after setup */
+const TELEGRAM_TOKEN   = '8666570687:AAGc48MH9lQY8Qs3snFx69W-qJyB2uhsXUk';
+const TELEGRAM_CHAT_ID = '6494089306';  /* Manu M */
 
-/** Send WhatsApp notification — opens WhatsApp with pre-filled order message */
+/** Send Telegram notification — instant, free, no DLT needed */
 async function sendWhatsAppAuto(message) {
-  /* Method 1: CallMeBot automatic (if APIKEY is set) */
-  if (CALLMEBOT_APIKEY) {
-    try {
-      const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(CALLMEBOT_PHONE)}&text=${encodeURIComponent(message)}&apikey=${CALLMEBOT_APIKEY}`;
-      const img = new Image();
-      img.src = url;
-      fetch(url, { mode: 'no-cors', cache: 'no-cache' }).catch(()=>{});
-      console.log('[CallMeBot] Auto WA sent ✅');
-    } catch(e) { console.warn('[CallMeBot]', e); }
+  if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) {
+    if (!TELEGRAM_CHAT_ID) showAdminToast('⚠️ Set TELEGRAM_CHAT_ID in admin.html');
+    return;
   }
 
-  /* Method 2: Always open WhatsApp with message pre-filled (works instantly, no API key needed) */
-  /* This opens a WhatsApp notification to yourself — one tap to confirm */
-  const waUrl = `https://wa.me/${CALLMEBOT_PHONE.replace('+','')}?text=${encodeURIComponent(message)}`;
-  
-  /* Store for the banner button */
-  window._lastWaUrl = waUrl;
-  
-  /* Show WA button in banner so admin can tap to open */
-  const bannerText = document.getElementById('bannerText');
-  if (bannerText) {
-    const existing = document.getElementById('waBannerLink');
-    if (!existing) {
-      const waBtn = document.createElement('a');
-      waBtn.id = 'waBannerLink';
-      waBtn.href = waUrl;
-      waBtn.target = '_blank';
-      waBtn.style.cssText = 'background:#25D366;color:#fff;padding:5px 12px;border-radius:8px;font-size:.75rem;font-weight:800;text-decoration:none;margin-left:8px;white-space:nowrap';
-      waBtn.textContent = '📱 WA Alert';
-      bannerText.parentNode.appendChild(waBtn);
+  const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+  const body = JSON.stringify({
+    chat_id:    TELEGRAM_CHAT_ID,
+    text:       message,
+    parse_mode: 'HTML',
+  });
+
+  /* Method 1: Normal fetch (works most of the time) */
+  try {
+    const resp = await fetch(url, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    body,
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      console.log('[Telegram] ✅ Sent');
+      showAdminToast('📱 Telegram alert sent!');
+      return;
     }
+    console.warn('[Telegram] API error:', data.description);
+  } catch(e) {
+    console.warn('[Telegram] fetch failed, trying no-cors:', e.message);
+  }
+
+  /* Method 2: no-cors fallback (fire and forget) */
+  try {
+    fetch(url, {
+      method:  'POST',
+      mode:    'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body:    body,
+    });
+    showAdminToast('📱 Telegram alert fired!');
+  } catch(e) {
+    console.warn('[Telegram] all methods failed:', e);
   }
 }
 
 /** Test CallMeBot — tap to send test message */
-function testCallMeBot() {
-  if (!CALLMEBOT_APIKEY) {
-    /* Open step-by-step setup guide */
-    const old = document.getElementById('callmebotSetupModal');
+function testTelegramAlert() {
+  if (!TELEGRAM_CHAT_ID) {
+    /* Show setup guide */
+    const old = document.getElementById('tgSetupModal');
     if (old) old.remove();
     const m = document.createElement('div');
-    m.id = 'callmebotSetupModal';
+    m.id = 'tgSetupModal';
     m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:flex-end;justify-content:center;font-family:Space Grotesk,sans-serif';
     m.innerHTML = `
       <div style="background:#1C1C27;border-radius:20px 20px 0 0;width:100%;max-width:440px;padding:22px 20px 36px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <div style="font-size:1rem;font-weight:800;color:#fff">📱 Setup CallMeBot</div>
-          <button onclick="document.getElementById('callmebotSetupModal').remove()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer">✕</button>
+          <div style="font-size:1rem;font-weight:800;color:#fff">📱 Setup Telegram Alert</div>
+          <button onclick="document.getElementById('tgSetupModal').remove()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer">✕</button>
         </div>
         <div style="background:#13131A;border-radius:12px;padding:14px;margin-bottom:12px">
-          <div style="font-size:.75rem;font-weight:800;color:#FFD700;margin-bottom:10px">3 steps to get WhatsApp alerts:</div>
-          <div style="font-size:.82rem;color:#9CA3AF;line-height:1.9">
-            <b style="color:#fff">Step 1:</b> Save this in WhatsApp contacts:<br>
-            <span style="color:#4A9EFF;font-family:monospace;font-size:.9rem">+34 621 331 709</span><br>
-            Name it: <b style="color:#fff">CallMeBot</b><br><br>
-            <b style="color:#fff">Step 2:</b> Send this EXACT message:<br>
-            <span style="color:#48C479;font-family:monospace">I allow callmebot to send me messages</span><br><br>
-            <b style="color:#fff">Step 3:</b> You receive your APIKEY. Paste it in admin.html:<br>
-            <span style="color:#FC8019;font-family:monospace">CALLMEBOT_APIKEY = 'your-key'</span>
+          <div style="font-size:.78rem;font-weight:800;color:#2AABEE;margin-bottom:10px">2 steps to get instant alerts:</div>
+          <div style="font-size:.84rem;color:#9CA3AF;line-height:2">
+            <b style="color:#fff">Step 1:</b> Open Telegram → go to<br>
+            <a href="https://t.me/Bgytwhshsjsjwjsnsbsbot" target="_blank" style="color:#2AABEE">t.me/Bgytwhshsjsjwjsnsbsbot</a><br>
+            Send any message (e.g. <b style="color:#fff">hello</b>)<br><br>
+            <b style="color:#fff">Step 2:</b> Open this in browser:<br>
+            <span style="color:#FFD700;font-size:.72rem;word-break:break-all">https://api.telegram.org/bot${TELEGRAM_TOKEN}/getUpdates</span><br>
+            Find <b style="color:#48C479">"id"</b> inside <b style="color:#48C479">"chat"</b><br>
+            Paste that number in admin.html as <b style="color:#FC8019">TELEGRAM_CHAT_ID</b>
           </div>
         </div>
-        <div style="background:rgba(252,128,25,.08);border:1px solid rgba(252,128,25,.2);border-radius:10px;padding:10px;margin-bottom:14px;font-size:.76rem;color:#FC8019">
-          ⚠️ No reply after 10 min? Send: <b>Recover APIKey</b><br>
-          Still nothing? Try alternate: <b>+34 611 021 695</b>
-        </div>
-        <a href="https://wa.me/34621331709?text=I%20allow%20callmebot%20to%20send%20me%20messages" target="_blank"
-          style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;border-radius:12px;padding:13px;text-decoration:none;color:#fff;font-weight:800;font-size:.9rem">
-          📱 Open WhatsApp to activate
+        <a href="https://t.me/Bgytwhshsjsjwjsnsbsbot" target="_blank"
+          style="display:flex;align-items:center;justify-content:center;gap:8px;background:#2AABEE;border-radius:12px;padding:13px;text-decoration:none;color:#fff;font-weight:800;font-size:.9rem">
+          📱 Open Telegram Bot
         </a>
       </div>`;
     document.body.appendChild(m);
     m.addEventListener('click', e => { if(e.target===m) m.remove(); });
     return;
   }
-  sendWhatsAppAuto('New Order Alert Test! MM Chats Admin is working. CallMeBot connected successfully.');
-  showAdminToast('📱 Test message sent! Check your WhatsApp');
+  /* Test send */
+  sendWhatsAppAuto('🧪 <b>Test Alert!</b>\nMM Chats Telegram bot is working! ✅\nYou will receive instant alerts for every new order.');
+  showAdminToast('📱 Test sent to Telegram!');
 }
+
+/* testCallMeBot removed — using Telegram now */
 
 /** Request browser notification permission on first load */
 function requestNotifPermission() {
@@ -1353,38 +1400,45 @@ function requestNotifPermission() {
   }
 }
 
-/** Full notification: CallMeBot auto + browser push */
+/** Full notification: Telegram auto + browser push */
 function notifyNewOrder(order) {
   const name    = order?.customer?.name  || 'Customer';
   const phone   = order?.customer?.phone || '';
   const total   = order?.total           || 0;
-  const items   = order?.items?.map(i => i.name + '×' + i.qty).join(', ') || '';
+  const items   = (order?.items||[]).map(i => i.name + ' ×' + i.qty).join('\n  ');
   const orderId = order?.id              || '';
+  const addr    = order?.customer?.addr  || '';
+  const cutlery = order?.cutlery ? '🥄 Send Cutlery' : '🚫 No Cutlery';
+  const note    = order?.instructions ? '\n📝 ' + order.instructions : '';
 
-  /* ── 1. AUTOMATIC WhatsApp via CallMeBot (no tap needed!) ── */
-  const waMsg =
-    `🔔 New Order! MM Chats\n` +
-    `Order: #${orderId}\n` +
-    `Customer: ${name}\n` +
-    `Phone: ${phone}\n` +
-    `Items: ${items}\n` +
-    `Total: Rs.${total}\n` +
-    `Status: Pending - Please Prepare!`;
+  /* ── 1. TELEGRAM — Instant automatic alert ── */
+  const tgMsg =
+    `🔔 <b>New Order!</b> MM Chats\n` +
+    `━━━━━━━━━━━━━━\n` +
+    `📋 Order: <b>#${orderId}</b>\n` +
+    `👤 <b>${name}</b>  📞 ${phone}\n` +
+    `━━━━━━━━━━━━━━\n` +
+    `🛍 Items:\n  ${items}\n` +
+    `💰 Total: <b>₹${total}</b>\n` +
+    `📍 ${addr}\n` +
+    `${cutlery}${note}\n` +
+    `━━━━━━━━━━━━━━\n` +
+    `⚡ Accept in admin panel now!`;
 
-  sendWhatsAppAuto(waMsg);
+  sendWhatsAppAuto(tgMsg);
 
-  /* ── 2. Browser Push Notification (lock screen alert) ── */
+  /* ── 2. Browser Push Notification (lock screen) ── */
   if ('Notification' in window && Notification.permission === 'granted') {
     try {
       const n = new Notification('🔔 New Order! MM Chats', {
-        body:  `${name} · Rs.${total} · ${items.slice(0, 60)}`,
+        body:  `${name} · ₹${total} · ${(order?.items||[]).map(i=>i.name).join(', ')}`,
         tag:   orderId,
         requireInteraction: true,
-        vibrate: [200, 100, 200, 100, 200],
+        vibrate: [300, 100, 300, 100, 300],
       });
       n.onclick = () => { window.focus(); n.close(); };
       setTimeout(() => n.close(), 60000);
-    } catch(e) { /* silent */ }
+    } catch(e) {}
   }
 }
 
@@ -1589,9 +1643,10 @@ async function pullAndSync() {
 
     /* Re-render current view */
     if (currentSection === 'dashboard') renderDashboard();
-    if (currentSection === 'orders')    renderActiveOrders();
+    if (currentSection === 'orders')  { renderActiveOrders(); }
     if (currentSection === 'history')   renderHistory();
     updatePendingBadge();
+    updateTabBadges(_ordersCache);
 
   } else {
     /* Firebase unreachable — keep existing cache, restore from localStorage */
@@ -1672,8 +1727,8 @@ function statusBadge(status){
   return `<span class="badge ${cls}">${label}</span>`;
 }
 function statusSelectHTML(orderId,current){
-  const opts=['pending','preparing','out_for_delivery','delivered'];
-  const labels={pending:'⏳ Pending',preparing:'🔥 Preparing',out_for_delivery:'🛵 Out for Delivery',delivered:'✅ Delivered'};
+  const opts=['pending','preparing','ready','out_for_delivery','delivered'];
+  const labels={pending:'⏳ Pending',preparing:'🔥 Preparing',ready:'📦 Ready',out_for_delivery:'🛵 Out for Delivery',delivered:'✅ Delivered'};
   return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
     <select class="status-sel" onchange="updateStatus(this.value,'${orderId}')">
       ${opts.map(o=>`<option value="${o}" ${o===current?'selected':''}>${labels[o]}</option>`).join('')}
@@ -2270,8 +2325,8 @@ function orderCardHTML(o){
 
     const time = new Date(o.placedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     const date = new Date(o.placedAt).toLocaleDateString([],{day:'numeric',month:'short'});
-    const sc   = {pending:'#FC8019',preparing:'#4A9EFF',out_for_delivery:'#A78BFA',delivered:'#48C479',cancelled:'#E23744'}[status]||'#FC8019';
-    const sl   = {pending:'Pending',preparing:'Preparing 🔥',out_for_delivery:'On the Way 🛵',delivered:'Delivered ✓',cancelled:'Cancelled'}[status]||status;
+    const sc   = {pending:'#FC8019',preparing:'#4A9EFF',ready:'#FFD700',out_for_delivery:'#A78BFA',delivered:'#48C479',cancelled:'#E23744'}[status]||'#FC8019';
+    const sl   = {pending:'Pending',preparing:'Preparing 🔥',ready:'Ready 📦',out_for_delivery:'On the Way 🛵',delivered:'Delivered ✓',cancelled:'Cancelled'}[status]||status;
 
     const itemsHTML = items.map(i=>`
       <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1C1C27">
@@ -2314,6 +2369,17 @@ function orderCardHTML(o){
       <div style="padding:10px 16px;border-bottom:1px solid #2A2A3D;font-size:.78rem;color:#9CA3AF;line-height:1.5">
         📍 ${addr}
       </div>
+
+      ${(o.instructions || o.cutlery !== undefined) ? `
+      <div style="padding:10px 16px;border-bottom:1px solid #2A2A3D;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:.84rem">${o.cutlery ? '🥄 Send Cutlery' : '🚫 No Cutlery'}</span>
+          <span style="font-size:.68rem;font-weight:800;padding:2px 9px;border-radius:10px;background:${o.cutlery ? 'rgba(74,158,255,.15)' : 'rgba(72,196,121,.12)'};color:${o.cutlery ? '#4A9EFF' : '#48C479'}">${o.cutlery ? 'INCLUDE' : 'SKIP'}</span>
+        </div>
+        ${o.instructions ? `<div style="font-size:.82rem;color:#FFD700;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.25);border-radius:8px;padding:8px 12px;line-height:1.5">
+          📝 <b style="color:#FFD700">Customer Note:</b> ${o.instructions}
+        </div>` : ''}
+      </div>` : ''}
 
       <div style="padding:10px 16px;border-bottom:1px solid #2A2A3D;display:flex;align-items:center;gap:7px;flex-wrap:wrap">
         <span style="font-size:.72rem;font-weight:700;color:#6B6B8A">⏱ Prep:</span>
@@ -2517,6 +2583,8 @@ function buildKOTHtml(order) {
     <p style="margin:2px 0;font-size:.78rem">Phone: ${order.customer?.phone||''}</p>
     <p style="margin:2px 0;font-size:.78rem">Address: ${order.customer?.addr||''}</p>
     <p style="margin:2px 0;font-size:.78rem">Time: ${now}</p>
+    ${order.cutlery !== undefined ? `<p style="margin:2px 0;font-size:.78rem;font-weight:700">${order.cutlery ? '🥄 SEND CUTLERY' : '🚫 NO CUTLERY'}</p>` : ''}
+    ${order.instructions ? `<p style="margin:4px 0;font-size:.8rem;font-weight:700;background:#fffbe6;padding:4px 6px;border-left:3px solid #FFD700">📝 Note: ${order.instructions}</p>` : ''}
     <hr style="border:1px dashed #000;margin:8px 0">
     <table style="width:100%;font-size:.82rem;border-collapse:collapse">
       <tr style="border-bottom:1px dashed #000;font-weight:700">
@@ -2642,20 +2710,82 @@ function renderDashboard(){
   }
 }
 
+/* ── ORDER STATUS TABS ─────────────────────────────────── */
+let _activeOrderTab = 'all';
+
+function filterOrderTab(status) {
+  _activeOrderTab = status;
+
+  /* Update tab styles */
+  ['all','pending','preparing','ready','out_for_delivery'].forEach(s => {
+    const id  = s === 'out_for_delivery' ? 'tab-out' :
+                s === 'all' ? 'tab-all' : 'tab-' + s;
+    const btn = document.getElementById(id);
+    if (btn) btn.classList.toggle('active-tab', s === status);
+  });
+
+  renderActiveOrders();
+}
+
+function updateTabBadges(orders) {
+  const active = orders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled');
+  const counts = {
+    all:              active.length,
+    pending:          active.filter(o => o.status === 'pending').length,
+    preparing:        active.filter(o => o.status === 'preparing').length,
+    ready:            active.filter(o => o.status === 'ready').length,
+    out_for_delivery: active.filter(o => o.status === 'out_for_delivery').length,
+  };
+  const ids = { all:'badge-all', pending:'badge-pending', preparing:'badge-preparing',
+                ready:'badge-ready', out_for_delivery:'badge-out' };
+  Object.entries(counts).forEach(([s, n]) => {
+    const el = document.getElementById(ids[s]);
+    if (el) el.textContent = n;
+  });
+}
+
 function renderActiveOrders(){
-  const active = getActiveOrders();
-  const el     = document.getElementById('activeOrdersWrap');
-  const label  = document.getElementById('orderCountLabel');
-  if (label) label.textContent = active.length + ' active';
+  const all    = _ordersCache;
+  const active = all.filter(o => o.status !== 'delivered' && o.status !== 'cancelled');
+
+  /* Update tab badges */
+  updateTabBadges(all);
+
+  /* Filter by selected tab */
+  const filtered = _activeOrderTab === 'all'
+    ? active
+    : active.filter(o => o.status === _activeOrderTab);
+
+  const label = document.getElementById('orderCountLabel');
+  if (label) label.textContent = filtered.length + ' order' + (filtered.length !== 1 ? 's' : '');
+
+  const el = document.getElementById('activeOrdersWrap');
   if (!el) return;
-  if (!active.length) {
-    el.innerHTML = `<div class="empty-state"><div class="es-icon">✅</div><p>No active orders right now!</p></div>`;
+
+  if (!filtered.length) {
+    const statusLabels = {
+      all: 'No active orders right now',
+      pending: 'No pending orders',
+      preparing: 'No orders being prepared',
+      ready: 'No orders ready for pickup',
+      out_for_delivery: 'No orders out for delivery',
+    };
+    const msg = statusLabels[_activeOrderTab] || 'No orders';
+    el.innerHTML = `
+      <div style="text-align:center;padding:48px 20px;color:var(--muted)">
+        <div style="font-size:3rem;margin-bottom:12px">
+          ${{ all:'✅', pending:'⏳', preparing:'🔥', ready:'📦', out_for_delivery:'🛵' }[_activeOrderTab] || '✅'}
+        </div>
+        <div style="font-size:.95rem;font-weight:700;color:var(--text)">${msg}</div>
+        <div style="font-size:.78rem;margin-top:6px">${_activeOrderTab !== 'all' ? 'Try "All" tab to see everything' : 'All caught up! 🎉'}</div>
+      </div>`;
     return;
   }
+
   try {
-    el.innerHTML = active.map(orderCardHTML).join('');
+    el.innerHTML = filtered.map(orderCardHTML).join('');
   } catch(err) {
-    console.error('[renderActiveOrders] error:', err);
+    console.error('[renderActiveOrders]', err);
     el.innerHTML = `<div style="color:#E23744;padding:12px">Error: ${err.message}</div>`;
   }
 }
