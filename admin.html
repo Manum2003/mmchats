@@ -3262,7 +3262,22 @@ function showDashboard() {
   setTimeout(() => {
     try { initPolling(); }    catch(e) { console.warn(e); }
     try { initShopStatus(); } catch(e) { console.warn(e); }
+    /* ── Broadcast OPEN immediately when admin logs in ── */
+    setTimeout(() => {
+      const isOpen = computeShopOpen();
+      broadcastShopStatus(isOpen);
+      updateShopToggleUI(isOpen);
+    }, 600);
   }, 400);
+
+  /* Keep refreshing shop status to Firebase every 2 minutes
+     so customer always sees correct status */
+  setInterval(() => {
+    try {
+      const isOpen = computeShopOpen();
+      broadcastShopStatus(isOpen);
+    } catch(e) {}
+  }, 120000);
 
   setInterval(() => {
     try { if (currentSection === 'dashboard') renderDashboard(); } catch(e) {}
@@ -3399,10 +3414,26 @@ async function broadcastShopStatus(isOpen) {
     openTime:       '4:30 PM',
     closeTime:      '9:00 PM',
   };
+
+  /* 1. Save locally immediately */
   localStorage.setItem('mmShopStatus', JSON.stringify(status));
+
+  /* 2. Push to Firebase */
   try {
-    await cloudPushShopStatus(status);
-  } catch(e) {}
+    const resp = await fetch(`${FIREBASE_URL}/mmchats/shopStatus.json`, {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(status),
+    });
+    if (resp.ok) {
+      console.log('[ShopStatus] ✅ Firebase updated:', isOpen ? 'OPEN' : 'CLOSED');
+    } else if (resp.status === 403) {
+      console.warn('[ShopStatus] ❌ Firebase rules blocking access — fix rules in Firebase Console');
+    }
+  } catch(e) {
+    /* Silent fail — network issues are normal on mobile */
+    console.log('[ShopStatus] Offline — status saved locally');
+  }
 }
 
 /** Update all UI elements */
