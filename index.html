@@ -2954,32 +2954,31 @@ function renderOrders() {
   const el = document.getElementById('ordersList');
   if (!el) return;
 
-  /* Show loading first */
-  el.innerHTML = `<div style="text-align:center;padding:40px;color:#999">
-    <div style="font-size:2rem;margin-bottom:8px">⏳</div>
-    <div style="font-size:.88rem">Loading your orders...</div>
-  </div>`;
+  /* ── Step 1: Show localStorage orders IMMEDIATELY (no loading spinner) */
+  const localOrders = JSON.parse(localStorage.getItem('mmorders') || '[]');
+  renderOrdersList(localOrders);
 
-  /* Pull fresh from Firebase first, then render */
-  cloudPull().then(firebaseOrders => {
-    if (firebaseOrders && firebaseOrders.length > 0) {
-      /* Merge with localStorage */
-      const local = JSON.parse(localStorage.getItem('mmorders') || '[]');
+  /* ── Step 2: Try Firebase in background — update if newer data found */
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('timeout')), 5000)
+  );
+
+  Promise.race([cloudPull(), timeout])
+    .then(firebaseOrders => {
+      if (!firebaseOrders || !firebaseOrders.length) return;
+      /* Merge Firebase + localStorage */
       const merged = {};
-      local.forEach(o => { if(o?.id) merged[o.id] = o; });
+      localOrders.forEach(o => { if(o?.id) merged[o.id] = o; });
       firebaseOrders.forEach(o => { if(o?.id) merged[o.id] = o; });
       const all = Object.values(merged);
-      try { localStorage.setItem('mmorders', JSON.stringify(all)); } catch(e){}
+      try { localStorage.setItem('mmorders', JSON.stringify(all)); } catch(e) {}
+      /* Re-render with fresh data */
       renderOrdersList(all);
-    } else {
-      /* Use localStorage as fallback */
-      const all = JSON.parse(localStorage.getItem('mmorders') || '[]');
-      renderOrdersList(all);
-    }
-  }).catch(() => {
-    const all = JSON.parse(localStorage.getItem('mmorders') || '[]');
-    renderOrdersList(all);
-  });
+    })
+    .catch(() => {
+      /* Firebase failed or timed out — localStorage already shown above */
+      console.log('[Orders] Firebase unavailable — showing local orders');
+    });
 }
 
 function renderOrdersList(all) {
@@ -3003,11 +3002,15 @@ function renderOrdersList(all) {
   });
 
   if (!myOrders.length) {
+    const myPhone2 = (currentUser && currentUser.phone)
+      ? currentUser.phone.trim()
+      : localStorage.getItem('mmLastPhone') || '';
     el.innerHTML = `
       <div class="orders-empty">
         <span class="icon"><svg viewBox="0 0 24 24"><path d="M19.5 3.5L18 2l-1.5 1.5L15 2l-1.5 1.5L12 2l-1.5 1.5L9 2 7.5 3.5 6 2v14H3v3c0 1.66 1.34 3 3 3h12c1.66 0 3-1.34 3-3V2l-1.5 1.5zM19 19c0 .55-.45 1-1 1H6c-.55 0-1-.45-1-1v-1h14v1zM18 16H6V4h12v12z"/></svg></span>
-        <h3>No orders yet</h3>
-        <p>Place your first order!</p>
+        <h3>No orders found</h3>
+        <p>${myPhone2 ? 'No orders for ' + myPhone2 : 'Place your first order!'}</p>
+        ${myPhone2 ? '' : '<p style="font-size:.78rem;color:#1A9E8F;margin-top:8px">Make sure you use the same phone number when ordering</p>'}
       </div>`;
     return;
   }
