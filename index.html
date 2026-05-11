@@ -3501,7 +3501,19 @@ function startClosedCountdown() {
 }
 
 /** Show or hide the shop-closed popup */
+let _prevShopOpen = null; /* track changes to show toast */
+
 function applyShopStatus(isOpen) {
+  /* Show toast when status changes after first load */
+  if (_prevShopOpen !== null && _prevShopOpen !== isOpen) {
+    if (isOpen) {
+      showToast('🟢 Shop is now OPEN! You can order now 🎉', 'success');
+    } else {
+      showToast('🔴 Shop is now closed', 'error');
+    }
+  }
+  _prevShopOpen = isOpen;
+
   if (_shopIsOpen === isOpen && document.getElementById('shopClosedOverlay').classList.contains('show') !== !isOpen) {
     /* No change */
   }
@@ -3639,23 +3651,6 @@ function startShopStatusPolling() {
   });
 }
 
-/** Track previous status to detect changes */
-let _prevShopOpen = null;
-
-/** Override applyShopStatus to show toast on status change */
-const _origApplyShopStatus = applyShopStatus;
-function applyShopStatus(isOpen) {
-  /* Show toast only when status changes (not on first load) */
-  if (_prevShopOpen !== null && _prevShopOpen !== isOpen) {
-    if (isOpen) {
-      showToast('🟢 Shop is now OPEN! You can order now 🎉', 'success');
-    } else {
-      showToast('🔴 Shop is now closed', 'error');
-    }
-  }
-  _prevShopOpen = isOpen;
-  _origApplyShopStatus(isOpen);
-}
 
 </script>
 
