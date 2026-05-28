@@ -110,6 +110,10 @@
   0%,100% { opacity:1; transform:scale(1); }
   50%      { opacity:.4; transform:scale(1.3); }
 }
+@keyframes bounce-delivery {
+  from { transform: translateX(0); }
+  to   { transform: translateX(6px); }
+}
 
 /* ══ SHOP CLOSED POPUP ══════════════════════════════════════ */
 #shopClosedOverlay {
@@ -1971,27 +1975,36 @@ async function cloudPush(newOrder) {
   }
 }
 
-/* Pull latest orders from Firebase — used for live tracking */
+/* Pull latest orders from Firebase — returns array for merging */
 async function cloudPull() {
   try {
-    if (!USE_FIREBASE) return;
+    if (!USE_FIREBASE) return null;
     const resp = await fetch(`${FIREBASE_URL}/mmchats/orders.json`);
-    if (!resp.ok) return;
+    if (!resp.ok) return null;
     const data = await resp.json();
-    if (!data) return;
+    if (!data) return null;
     /* Firebase returns keyed object — convert to array */
     const cloudOrders = Array.isArray(data) ? data : Object.values(data);
-    if (!cloudOrders.length) return;
+    if (!cloudOrders.length) return null;
 
-    /* Merge: update status of local orders from cloud */
+    /* Update localStorage with latest statuses from cloud */
     const local = JSON.parse(localStorage.getItem('mmorders') || '[]');
-    const merged = local.map(lo => {
-      const co = cloudOrders.find(c => c.id === lo.id);
-      return co ? { ...lo, status: co.status, borzoTracking: co.borzoTracking } : lo;
+    const merged = {};
+    local.forEach(o => { if(o?.id) merged[o.id] = o; });
+    cloudOrders.forEach(co => {
+      if (co?.id) {
+        merged[co.id] = merged[co.id]
+          ? { ...merged[co.id], status: co.status, prepMins: co.prepMins, acceptedAt: co.acceptedAt }
+          : co;
+      }
     });
-    localStorage.setItem('mmorders', JSON.stringify(merged));
-    orders = merged;
-  } catch(e) { /* silent */ }
+    const all = Object.values(merged);
+    try { localStorage.setItem('mmorders', JSON.stringify(all)); } catch(e) {}
+    orders = all;
+    return cloudOrders; /* return for renderOrders to merge */
+  } catch(e) {
+    return null;
+  }
 }
 
 /* Also push shop status to cloud */
@@ -2956,9 +2969,11 @@ function renderOrders() {
 
   /* ── Step 1: Show localStorage orders IMMEDIATELY (no loading spinner) */
   const localOrders = JSON.parse(localStorage.getItem('mmorders') || '[]');
+
+  /* Always render immediately — never show infinite spinner */
   renderOrdersList(localOrders);
 
-  /* ── Step 2: Try Firebase in background — update if newer data found */
+  /* ── Step 2: Try Firebase in background with 5s timeout */
   const timeout = new Promise((_, reject) =>
     setTimeout(() => reject(new Error('timeout')), 5000)
   );
@@ -2972,12 +2987,10 @@ function renderOrders() {
       firebaseOrders.forEach(o => { if(o?.id) merged[o.id] = o; });
       const all = Object.values(merged);
       try { localStorage.setItem('mmorders', JSON.stringify(all)); } catch(e) {}
-      /* Re-render with fresh data */
       renderOrdersList(all);
     })
     .catch(() => {
-      /* Firebase failed or timed out — localStorage already shown above */
-      console.log('[Orders] Firebase unavailable — showing local orders');
+      /* Firebase failed or timed out — localStorage already shown */
     });
 }
 
@@ -3032,6 +3045,27 @@ function renderOrdersList(all) {
   el.innerHTML = myOrders.map(o => {
     const s  = SM[o.status] || SM.pending;
     const pw = [0, 33, 66, 100][s.step] + '%';
+
+    /* Live tracking section — shown when out for delivery */
+    const trackingHTML = (o.status === 'out_for_delivery') ? `
+      <div style="margin-top:12px;background:linear-gradient(135deg,#EDE9FE,#F5F3FF);border:1.5px solid #A78BFA;border-radius:14px;padding:13px 14px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-size:1.3rem;animation:bounce-delivery 1s infinite alternate">🛵</span>
+          <div>
+            <div style="font-size:.88rem;font-weight:800;color:#5B21B6">Your order is on the way!</div>
+            <div style="font-size:.74rem;color:#7C3AED;margin-top:1px">Delivery in progress</div>
+          </div>
+        </div>
+        ${o.trackingLink ? `
+          <a href="${o.trackingLink}" target="_blank"
+            style="display:flex;align-items:center;justify-content:center;gap:8px;background:#A78BFA;border-radius:10px;padding:11px;text-decoration:none;color:#fff;font-weight:800;font-size:.88rem">
+            📍 Track on Google Maps (Live)
+          </a>` : `
+          <div style="font-size:.78rem;color:#7C3AED;text-align:center;padding:6px 0;opacity:.8">
+            🗺️ Live location will appear here shortly
+          </div>`}
+      </div>` : '';
+
     return `
       <div class="order-card">
         <div class="order-card-hd">
@@ -3049,6 +3083,7 @@ function renderOrdersList(all) {
               <div class="t-lbl">${lbl}</div>
             </div>`).join('')}
         </div>
+        ${trackingHTML}
         <div style="font-size:.7rem;color:var(--muted);margin-top:8px">${new Date(o.placedAt).toLocaleString()}</div>
       </div>`;
   }).join('');
