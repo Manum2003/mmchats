@@ -224,21 +224,83 @@ tr:hover td{background:rgba(255,255,255,.02);}
 
 /* ══ RESPONSIVE ═══════════════════════════════════════════ */
 @media(max-width:768px){
-  .sidebar{display:none;}
-  .top-bar{display:flex;}
-  .main{margin-left:0;padding:12px;padding-top:68px;padding-bottom:74px;}
-  .stats-grid{grid-template-columns:1fr 1fr;gap:10px;}
-  .bottom-nav{display:block;}
-  #soundToggle{bottom:76px;right:10px;padding:7px 12px;font-size:.72rem;}
-  .add-form{grid-template-columns:1fr;}
-  .add-form .full{grid-column:1;}
-  .page-header h2{font-size:1.1rem;}
-  #newOrderBanner{padding:0 12px;}
-  .banner-left{font-size:.8rem;}
+  /* ── Layout ── */
+  .sidebar { display:none; }
+  .top-bar { display:flex; }
+  .main    { margin-left:0; padding:12px; padding-top:68px; padding-bottom:80px; }
+
+  /* ── Stats grid: 2 columns on mobile ── */
+  .stats-grid { grid-template-columns:1fr 1fr; gap:10px; }
+  .stat-card  { padding:14px 12px; }
+  .stat-num   { font-size:1.6rem; }
+
+  /* ── Page headers ── */
+  .page-header     { flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .page-header h2  { font-size:1rem; }
+  .header-actions  { gap:6px; }
+  .header-actions .btn { padding:7px 10px; font-size:.76rem; }
+
+  /* ── Order tabs: horizontal scroll ── */
+  #section-orders .order-tab,
+  #tab-all, #tab-pending, #tab-preparing, #tab-ready, #tab-out {
+    padding:8px 13px; font-size:.76rem;
+  }
+
+  /* ── Order cards: full width, comfortable padding ── */
+  .order-list { gap:10px; }
+
+  /* ── New order popup: full screen ── */
+  #newOrderPopup { font-size:14px; }
+  .nop-prep-grid { grid-template-columns:repeat(4,1fr); gap:6px; }
+  .nop-prep-btn  { padding:9px 4px; font-size:.76rem; }
+  .nop-actions   { padding:12px 16px 28px; gap:8px; }
+  .nop-reject, .nop-accept { padding:14px; font-size:.88rem; }
+
+  /* ── Dashboard shop toggle ── */
+  #dashShopToggleWrap { margin:-12px -12px 16px; padding:14px 16px; }
+
+  /* ── Bottom nav: safe area ── */
+  .bottom-nav { display:block; }
+  #soundToggle { bottom:80px; right:10px; padding:7px 12px; font-size:.72rem; }
+
+  /* ── Forms ── */
+  .add-form { grid-template-columns:1fr; }
+  .add-form .full { grid-column:1; }
+
+  /* ── Settings ── */
+  .settings-grid { grid-template-columns:1fr; }
+
+  /* ── Menu management ── */
+  .menu-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
+
+  /* ── Revenue tab ── */
+  .revenue-grid { grid-template-columns:1fr; }
+
+  /* ── Status dropdown: full width ── */
+  .status-sel { width:100%; font-size:.82rem; padding:8px; }
+
+  /* ── Tap targets: min 44px ── */
+  button, .btn, .nav-btn, select { min-height:44px; }
+
+  /* ── Sidebar modal (drawer) ── */
+  #sidebar.drawer-open {
+    display:flex !important;
+    position:fixed; inset:0;
+    width:85%; max-width:300px;
+    z-index:9000; transform:translateX(0);
+    transition:transform .25s ease;
+    box-shadow:4px 0 24px rgba(0,0,0,.5);
+  }
+  #sidebarOverlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,.5); z-index:8999;
+  }
+  #sidebarOverlay.show { display:block; }
 }
 @media(min-width:769px){
-  .bottom-nav{display:none!important;}
-  .top-bar{display:none!important;}
+  .bottom-nav  { display:none !important; }
+  .top-bar     { display:none !important; }
+  #sidebarOverlay { display:none !important; }
 }
 
 /* ══ SHOP STATUS — ZOMATO STYLE ═══════════════════════════ */
@@ -625,7 +687,13 @@ async function pushStockStatus() {
 </div>
 
 <!-- MOBILE TOP BAR -->
+<div id="sidebarOverlay" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:8999"></div>
+
 <div class="top-bar" id="topBar" style="display:none">
+  <!-- Hamburger button opens sidebar drawer on mobile -->
+  <button onclick="openSidebar()" style="background:none;border:none;cursor:pointer;padding:8px;display:flex;align-items:center;justify-content:center;color:var(--text)">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+  </button>
   <div class="top-bar-logo">MM Chats Admin</div>
   <div class="top-bar-right">
     <span class="live-dot"></span>
@@ -637,11 +705,6 @@ async function pushStockStatus() {
       </label>
       <span id="mobileShopStatusText" style="font-size:.7rem;font-weight:800;color:var(--green)">OPEN</span>
     </div>
-    <button class="top-icon-btn" id="testOrderBtnMobile" title="Test Order">
-      <span class="ic" style="width:1.1rem;height:1.1rem;color:var(--purple)">
-        <svg viewBox="0 0 24 24"><path d="M19.3 4.7L14 2l-5.3 2.7L4 4 2 19l10 3 10-3-2-15-0.7.7zm-7.3 14.5L5.2 17.2 3.5 5.8l1.3-.3L6.2 16l5.8 1.5v1.7zm0-4L5.9 13.8 4.5 6.5l1.3-.3 1.2 6.3 5 1.3v1.4zm0-4L6.6 10.3l-.9-4.5 1.3-.3.7 3.5 4.3 1.1v1.6zm7.8 6.8L13 19.2v-1.7L18.8 16l.4-2.2 1.3.3-1.2 6.4zm-1.4-4.4L13 16.2v-1.4l5-1.3 1.2-6.3 1.3.3-1.5 7.3zm-1.4-4L13 12.1v-1.6l4.3-1.1.7-3.5 1.3.3-.9 4.5z"/></svg>
-      </span>
-    </button>
   </div>
 </div>
 
@@ -1156,14 +1219,35 @@ async function cloudPushAdmin(ordersArr) {
 /* Push a single order update — faster than pushing all */
 async function cloudPushOneOrder(order) {
   if (!USE_FIREBASE || !order?.id) return;
+  const url  = `${FIREBASE_URL}/mmchats/orders/${order.id}.json`;
+  const body = JSON.stringify(order);
+  const opts = { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body };
+
   try {
-    await fetch(`${FIREBASE_URL}/mmchats/orders/${order.id}.json`, {
-      method:  'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(order),
-    });
-  } catch(e) { /* silent */ }
+    const resp = await fetch(url, opts);
+    if (resp.ok) return; /* success */
+    /* Failed — queue for retry */
+    _pushQueue.set(order.id, order);
+  } catch(e) {
+    /* Network error — queue for retry */
+    _pushQueue.set(order.id, order);
+  }
 }
+
+/* Retry queue — pushes failed orders when connection is back */
+const _pushQueue = new Map();
+setInterval(async () => {
+  if (_pushQueue.size === 0) return;
+  for (const [id, order] of _pushQueue.entries()) {
+    try {
+      const resp = await fetch(`${FIREBASE_URL}/mmchats/orders/${id}.json`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(order),
+      });
+      if (resp.ok) _pushQueue.delete(id);
+    } catch(e) { /* still offline, try next time */ }
+  }
+}, 10000); /* retry every 10 seconds */
 
 /* Push shop open/close status to cloud */
 async function cloudPushShopStatus(statusObj) {
@@ -1391,7 +1475,29 @@ function testTelegramAlert() {
   showAdminToast('📱 Test sent to Telegram!');
 }
 
-/* testCallMeBot removed — using Telegram now */
+/* ── MOBILE SIDEBAR DRAWER ────────────────────────────────── */
+function openSidebar() {
+  const sb  = document.getElementById('sidebar');
+  const ov  = document.getElementById('sidebarOverlay');
+  if (sb) { sb.style.display = 'flex'; sb.classList.add('drawer-open'); }
+  if (ov) { ov.style.display = 'block'; }
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+  const sb  = document.getElementById('sidebar');
+  const ov  = document.getElementById('sidebarOverlay');
+  if (sb) { sb.classList.remove('drawer-open');
+    setTimeout(() => { if (!sb.classList.contains('drawer-open')) sb.style.display = 'none'; }, 250);
+  }
+  if (ov) ov.style.display = 'none';
+  document.body.style.overflow = '';
+}
+/* Close sidebar when nav item tapped on mobile */
+const _origShowSection = showSection;
+function showSection(target) {
+  if (window.innerWidth <= 768) closeSidebar();
+  _origShowSection(target);
+}
 
 /** Request browser notification permission on first load */
 function requestNotifPermission() {
@@ -1505,16 +1611,12 @@ function showNewOrderPopup(order) {
   /* Show popup */
   document.getElementById('newOrderPopup').classList.add('show');
 
-  /* Repeating alert sound */
+  /* Repeating alert sound — continues until admin accepts or rejects */
   playOrderMelody();
   _nopSoundTimer = setInterval(playOrderMelody, 6000);
 
-  /* Auto-reject after 3 min if no action */
-  setTimeout(() => {
-    if (document.getElementById('newOrderPopup').classList.contains('show')) {
-      rejectOrder();
-    }
-  }, 180000);
+  /* NOTE: No auto-reject timeout — admin must manually accept or reject.
+     Auto-reject was causing orders to be cancelled if admin was busy. */
 }
 
 function selectPrepTime(mins, btn) {
@@ -1587,16 +1689,38 @@ function stopOrderSound(){
 }
 
 /* ── POLLING ─────────────────────────────────────────────── */
-let lastKnownIds = new Set();
+let lastKnownIds  = new Set();
+let _notifyReady  = false; /* only notify AFTER first pull completes */
 
 function initPolling(){
-  /* Seed known IDs from initial cache */
+  /* Seed from localStorage cache first */
   _ordersCache.forEach(o => lastKnownIds.add(o.id));
 
-  /* Pull from Firebase immediately */
-  pullAndSync();
+  /* First pull: seed from Firebase WITHOUT sending notifications.
+     Only orders arriving AFTER this are truly "new". */
+  cloudPullAdmin().then(firebaseOrders => {
+    if (firebaseOrders) {
+      firebaseOrders.forEach(fo => {
+        if (fo?.id) lastKnownIds.add(fo.id); /* mark ALL existing as known */
+      });
+      /* Merge into cache silently */
+      const mergedMap = {};
+      _ordersCache.forEach(o => { mergedMap[o.id] = o; });
+      firebaseOrders.forEach(fo => { if (fo?.id && !mergedMap[fo.id]) mergedMap[fo.id] = fo; });
+      _ordersCache = Object.values(mergedMap);
+      try { localStorage.setItem('mmorders', JSON.stringify(_ordersCache)); } catch(e){}
+      renderDashboard();
+      updatePendingBadge();
+      updateTabBadges(_ordersCache);
+    }
+    /* NOW enable notifications — only orders after this point are new */
+    _notifyReady = true;
+    console.log('[Polling] Ready — monitoring for new orders. Known:', lastKnownIds.size);
+  }).catch(() => {
+    _notifyReady = true; /* enable even if Firebase fails */
+  });
 
-  /* Poll every 3 seconds — fast enough for real-time feel */
+  /* Poll every 3 seconds */
   setInterval(pullAndSync, 3000);
 }
 
@@ -1610,24 +1734,51 @@ async function pullAndSync() {
        Orders only leave cache when explicitly marked delivered/cancelled.
     ────────────────────────────────────────────────────────── */
 
-    /* Detect new orders */
+    /* Detect new orders — only after first pull (notifyReady) */
     firebaseOrders.forEach(fo => {
       if (!lastKnownIds.has(fo.id)) {
         lastKnownIds.add(fo.id);
-        showNewOrderBanner(fo);
-        notifyNewOrder(fo);
+        if (_notifyReady) {
+          /* Truly new order — alert admin */
+          showNewOrderBanner(fo);
+          notifyNewOrder(fo);
+        }
       }
     });
 
-    /* Merge: update existing, add new — never delete */
+    /* ── SMART MERGE ─────────────────────────────────────────
+       Rules:
+       1. Start with local cache (admin's changes are authoritative)
+       2. Add any NEW orders from Firebase that aren't in cache
+       3. For existing orders: only update status FROM Firebase if
+          local status is still 'pending' (not yet acted on)
+       4. Never remove or downgrade an order admin already accepted
+    ────────────────────────────────────────────────────────── */
     const mergedMap = {};
 
-    /* Start with current cache */
+    /* Start with current cache — local is authoritative */
     _ordersCache.forEach(o => { mergedMap[o.id] = o; });
 
-    /* Overlay with Firebase data (updates status etc) */
+    /* From Firebase: add NEW orders, update ONLY if not yet acted on locally */
     firebaseOrders.forEach(fo => {
-      if (fo && fo.id) mergedMap[fo.id] = fo;
+      if (!fo || !fo.id) return;
+      if (!mergedMap[fo.id]) {
+        /* Brand new order not in local cache — add it */
+        mergedMap[fo.id] = fo;
+      } else {
+        const local = mergedMap[fo.id];
+        /* Only let Firebase update status if local is still pending
+           (meaning admin hasn't acted on it yet).
+           If admin already accepted/prepared/etc → keep local status */
+        if (local.status === 'pending' && fo.status !== 'pending') {
+          mergedMap[fo.id] = { ...local, ...fo };
+        } else {
+          /* Keep local version but update tracking info from Firebase */
+          mergedMap[fo.id] = { ...fo, status: local.status,
+            prepMins: local.prepMins, acceptedAt: local.acceptedAt,
+            trackingLink: local.trackingLink || fo.trackingLink };
+        }
+      }
     });
 
     /* Only replace cache if merged result is valid */
@@ -2389,6 +2540,27 @@ function orderCardHTML(o){
 
       <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
         ${statusSelectHTML(o.id, status)}
+
+        ${status === 'out_for_delivery' ? `
+        <div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.25);border-radius:12px;padding:12px">
+          <div style="font-size:.72rem;font-weight:800;color:#A78BFA;margin-bottom:8px">📍 Live Tracking Link for Customer</div>
+          <div style="display:flex;gap:7px">
+            <input id="trackInput_${o.id}" type="url"
+              value="${o.trackingLink||''}"
+              placeholder="Paste WhatsApp Live Location URL..."
+              style="flex:1;padding:8px 10px;border:1.5px solid #A78BFA;border-radius:8px;font-size:.78rem;font-family:Space Grotesk,sans-serif;outline:none;color:#111;min-width:0">
+            <button onclick="saveTrackingLink('${o.id}')"
+              style="padding:8px 12px;background:#A78BFA;border:none;border-radius:8px;color:#fff;font-size:.78rem;font-weight:800;cursor:pointer;font-family:Space Grotesk,sans-serif;white-space:nowrap">
+              Save
+            </button>
+          </div>
+          <button onclick="shareMyLocation('${o.id}')"
+            style="margin-top:8px;width:100%;padding:9px;background:rgba(72,196,121,.12);border:1px solid rgba(72,196,121,.3);border-radius:8px;color:#48C479;font-size:.78rem;font-weight:700;cursor:pointer;font-family:Space Grotesk,sans-serif">
+            📍 Use My Current Location (Auto)
+          </button>
+          ${o.trackingLink ? `<div style="font-size:.7rem;color:#48C479;margin-top:6px">✅ Tracking link set — customer can see location</div>` : ''}
+        </div>` : ''}
+
         <div style="display:flex;gap:8px">
           <button onclick="printKOTById('${o.id}')"
             style="flex:1;padding:10px;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.3);border-radius:10px;color:#4A9EFF;font-weight:700;font-size:.78rem;cursor:pointer;font-family:Space Grotesk,sans-serif">
@@ -2422,7 +2594,72 @@ function updatePendingBadge(){
 
 
 
-/* Safe wrappers — look up order by ID so no JSON in onclick attrs */
+/* ── LIVE TRACKING ────────────────────────────────────────── */
+async function saveTrackingLink(orderId) {
+  const input = document.getElementById('trackInput_' + orderId);
+  if (!input) return;
+  const link = input.value.trim();
+
+  /* Save to Firebase */
+  try {
+    await fetch(`${FIREBASE_URL}/mmchats/orders/${orderId}.json`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ trackingLink: link }),
+    });
+    /* Update local cache */
+    const o = _ordersCache.find(x => x.id === orderId);
+    if (o) o.trackingLink = link;
+    showAdminToast('✅ Tracking link saved! Customer can see live location.');
+    renderActiveOrders();
+  } catch(e) {
+    showAdminToast('❌ Failed to save — check internet');
+  }
+}
+
+async function shareMyLocation(orderId) {
+  if (!navigator.geolocation) {
+    showAdminToast('❌ GPS not available on this device');
+    return;
+  }
+  showAdminToast('📍 Getting your location...');
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const lat  = pos.coords.latitude;
+    const lng  = pos.coords.longitude;
+    /* Create a Google Maps link with your current location */
+    const link = `https://www.google.com/maps?q=${lat},${lng}`;
+
+    const input = document.getElementById('trackInput_' + orderId);
+    if (input) input.value = link;
+
+    /* Auto-save to Firebase */
+    try {
+      await fetch(`${FIREBASE_URL}/mmchats/orders/${orderId}.json`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ trackingLink: link, trackingLat: lat, trackingLng: lng, trackingAt: Date.now() }),
+      });
+      const o = _ordersCache.find(x => x.id === orderId);
+      if (o) { o.trackingLink = link; o.trackingLat = lat; o.trackingLng = lng; }
+      showAdminToast('✅ Your location shared! Customer can track you live.');
+      renderActiveOrders();
+    } catch(e) {
+      showAdminToast('📍 Location copied — paste it in the tracking box');
+    }
+  }, () => {
+    showAdminToast('❌ Could not get location — check GPS permission');
+  }, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+/* Auto-update location every 30 seconds when out for delivery */
+let _trackingAutoInterval = null;
+function startAutoTracking(orderId) {
+  stopAutoTracking();
+  _trackingAutoInterval = setInterval(() => shareMyLocation(orderId), 30000);
+}
+function stopAutoTracking() {
+  if (_trackingAutoInterval) { clearInterval(_trackingAutoInterval); _trackingAutoInterval = null; }
+}
 function printKOTById(id) {
   const o = _ordersCache.find(x => x.id === id);
   if (o) printKOT(o);
