@@ -2,6 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1A9E8F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="MM Chats">
+  <link rel="apple-touch-icon" href="/icon-192.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>MM Chats Center</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
@@ -3769,11 +3775,27 @@ window.addEventListener('beforeinstallprompt', e => {
   }
 });
 
+/* Also show banner if already installed (via appinstalled event) */
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwaInstallBanner')?.classList.remove('show');
+  showToast('✅ App installed! Open from your home screen 🎉', 'success');
+});
+
 function installPWA() {
   document.getElementById('pwaInstallBanner')?.classList.remove('show');
+
   if (_deferredPrompt) {
+    /* Native install prompt — Android Chrome */
     _deferredPrompt.prompt();
-    _deferredPrompt.userChoice.then(() => { _deferredPrompt = null; });
+    _deferredPrompt.userChoice.then(choice => {
+      if (choice.outcome === 'accepted') {
+        showToast('✅ Installing MM Chats app...', 'success');
+      }
+      _deferredPrompt = null;
+    });
+  } else {
+    /* iOS Safari or unsupported — show manual instructions */
+    _showInstallGuide();
   }
 }
 
@@ -3782,11 +3804,53 @@ function dismissPWA() {
   localStorage.setItem('mm_pwa_dismissed', '1');
 }
 
-/* Register SW for offline support */
+/* Register service worker for offline support */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   });
+}
+
+function _showInstallGuide() {
+  /* Detect iOS */
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isSamsung = /samsung/i.test(navigator.userAgent);
+
+  const old = document.getElementById('pwaGuideModal');
+  if (old) old.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'pwaGuideModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99999;display:flex;align-items:flex-end;justify-content:center;font-family:Nunito,sans-serif';
+
+  const steps = isIOS
+    ? `<div style="font-size:.88rem;color:#374151;line-height:2">
+        1️⃣ Tap the <b>Share button</b> <span style="font-size:1.2rem">⬆️</span> at the bottom<br>
+        2️⃣ Scroll down and tap <b>"Add to Home Screen"</b><br>
+        3️⃣ Tap <b>"Add"</b> in the top right corner
+      </div>`
+    : `<div style="font-size:.88rem;color:#374151;line-height:2">
+        1️⃣ Tap the <b>menu ⋮</b> in your browser<br>
+        2️⃣ Tap <b>"Add to Home Screen"</b><br>
+        3️⃣ Tap <b>"Add"</b> to confirm
+      </div>`;
+
+  modal.innerHTML = `
+    <div style="background:#fff;width:100%;max-width:440px;border-radius:20px 20px 0 0;padding:24px 20px 36px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-size:1.1rem;font-weight:900;color:#111">📱 Install MM Chats</div>
+        <button onclick="document.getElementById('pwaGuideModal').remove()" style="background:rgba(0,0,0,.07);border:none;width:30px;height:30px;border-radius:50%;font-size:1rem;cursor:pointer">✕</button>
+      </div>
+      <div style="background:#F0FBF9;border-radius:14px;padding:16px;margin-bottom:14px">
+        ${steps}
+      </div>
+      <div style="font-size:.75rem;color:#9CA3AF;text-align:center">
+        Works offline · Fast · No app store needed
+      </div>
+    </div>`;
+
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -4356,9 +4420,6 @@ function startShopStatusPolling() {
   </div>
 </div>
 
-<!-- ═══ PWA INSTALL BANNER ═════════════════════════════════ -->
-<div id="pwaInstallBanner">
-  <div class="pwa-icon">🍱</div>
   <div class="pwa-text">
     <div class="t1">Install MM Chats App</div>
     <div class="t2">Works offline · Faster orders</div>
