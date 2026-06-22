@@ -232,14 +232,15 @@
 
 /* ═══ PWA INSTALL POPUP ══════════════════════════════════ */
 #pwaInstallBanner {
-  position: fixed; bottom: 90px; left: 12px; right: 12px;
+  position: fixed; bottom: 80px; left: 12px; right: 12px;
   background: linear-gradient(135deg, #1A9E8F 0%, #0d6e63 100%);
   border-radius: 20px; padding: 14px 16px;
   display: flex; align-items: center; gap: 12px;
-  box-shadow: 0 8px 32px rgba(26,158,143,.4);
-  z-index: 9800; transform: translateY(120px);
-  transition: transform .4s cubic-bezier(.34,1.56,.64,1);
-  border: 1px solid rgba(255,255,255,.2);
+  box-shadow: 0 8px 32px rgba(26,158,143,.5);
+  z-index: 9800;
+  transform: translateY(160px);
+  transition: transform .45s cubic-bezier(.34,1.56,.64,1);
+  border: 1px solid rgba(255,255,255,.25);
 }
 #pwaInstallBanner.show { transform: translateY(0); }
 .pwa-icon {
@@ -263,15 +264,7 @@
 }
 
 /* ═══ WHATSAPP FLOAT ══════════════════════════════════════ */
-#waFloat {
-  position: fixed; bottom: 90px; right: 16px;
-  width: 52px; height: 52px; border-radius: 50%;
-  background: #25D366;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 20px rgba(37,211,102,.5);
-  z-index: 9700; cursor: pointer; border: none;
-  animation: wa-pulse 2.5s infinite;
-}
+/* waFloat now uses inline styles in combined float group */
 @keyframes wa-pulse {
   0%,100% { box-shadow: 0 4px 20px rgba(37,211,102,.5); transform: scale(1); }
   50%      { box-shadow: 0 4px 32px rgba(37,211,102,.8); transform: scale(1.06); }
@@ -1580,6 +1573,7 @@ body {
   .app-wrapper { max-width:480px; margin:0 auto; background:var(--bg); min-height:100vh; box-shadow:0 0 40px rgba(0,0,0,.12); }
 }
 </style>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
 
@@ -1760,6 +1754,32 @@ body {
 
           <!-- Scan & Pay QR -->
           <div style="padding:16px 18px">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+              <div style="width:46px;height:46px;border-radius:12px;background:#E8F8F5;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">⚡</div>
+              <div>
+                <div style="font-size:.95rem;font-weight:800;color:#111">Pay via UPI App</div>
+                <div style="font-size:.76rem;color:#888;margin-top:2px">PhonePe, GPay, Paytm — tap your app, pay instantly</div>
+              </div>
+            </div>
+
+            <button onclick="payWithRazorpay()" id="razorpayPayBtn"
+              style="width:100%;padding:15px;background:linear-gradient(135deg,#1A9E8F,#0d8a7a);border:none;border-radius:14px;color:#fff;font-size:1rem;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(26,158,143,.35)">
+              <span style="font-size:1.3rem">📱</span> Pay ₹<span id="razorpayAmt">0</span> Now
+            </button>
+
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/UPI-Logo-vector.svg/512px-UPI-Logo-vector.svg.png" style="height:16px" onerror="this.style.display='none'">
+              <span style="font-size:.7rem;color:#aaa">Secured by Razorpay</span>
+            </div>
+          </div>
+
+          <div style="height:1px;background:#F0F0F0;margin:4px 18px"></div>
+
+          <div style="padding:0 18px 16px;text-align:center">
+            <span style="font-size:.74rem;color:#999;background:#fff;padding:0 8px">OR scan QR manually</span>
+          </div>
+
+          <div style="padding:0 18px 16px">
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
               <div style="width:46px;height:46px;border-radius:12px;background:#E3F2FD;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">📷</div>
               <div>
@@ -3036,6 +3056,8 @@ function goToPaymentStep() {
   if (stepsAmt) stepsAmt.textContent = grandTotal;
   const guideAmt = document.getElementById('qrAmtGuide');
   if (guideAmt) guideAmt.textContent = grandTotal;
+  const rzpAmt = document.getElementById('razorpayAmt');
+  if (rzpAmt) rzpAmt.textContent = grandTotal;
   const confirmAmt = document.getElementById('confirmAmtInline');
   if (confirmAmt) confirmAmt.textContent = grandTotal;
 
@@ -3471,6 +3493,85 @@ function enableConfirmIfReady() {
    Customer scans your Paytm QR → pays → comes back.
    This is how Zomato/Swiggy work too.
 ──────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   RAZORPAY CHECKOUT — Pay via PhonePe/GPay/Paytm/BHIM
+   ──────────────────────────────────────────────────────────
+   Customer taps "Pay Now" → Razorpay popup shows all UPI
+   apps installed on their phone → tap one → app opens with
+   amount pre-filled → pay → auto redirected back.
+══════════════════════════════════════════════════════════ */
+const RAZORPAY_KEY_ID = 'rzp_live_T4aR7RV6t1WLpW';
+
+function payWithRazorpay() {
+  const total = cart.reduce((s,i) => s + i.price*i.qty, 0);
+  if (!total) { showToast('Cart is empty'); return; }
+
+  const txnRef = 'MMC' + Date.now().toString().slice(-8);
+  currentTxnRef = txnRef;
+  sessionStorage.setItem('pendingTxn', JSON.stringify({txnRef, total, ts: Date.now()}));
+
+  const btn = document.getElementById('razorpayPayBtn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '.7'; btn.innerHTML = '<span style="font-size:1.1rem">⏳</span> Opening payment...'; }
+
+  const options = {
+    key:      RAZORPAY_KEY_ID,
+    amount:   total * 100,        /* paise */
+    currency: 'INR',
+    name:     'MM Chats Center',
+    description: 'Order ' + txnRef,
+    image:    '', /* optional logo URL */
+    notes:    { order_ref: txnRef },
+    theme:    { color: '#1A9E8F' },
+
+    /* Show only UPI method — opens app-tray automatically (Intent flow) */
+    method: { upi: true, card: false, netbanking: false, wallet: false, paylater: false, emi: false },
+
+    handler: function (response) {
+      /* Payment success */
+      paymentVerified = true;
+      sessionStorage.setItem('razorpayPaymentId', response.razorpay_payment_id || '');
+      sessionStorage.removeItem('pendingTxn');
+
+      const status = document.getElementById('paymentStatusMsg');
+      if (status) {
+        status.style.display = 'block';
+        status.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px;background:#E8F5E9;border:1.5px solid #A5D6A7;border-radius:12px;padding:13px 16px;margin-top:4px">
+            <span style="font-size:1.4rem">✅</span>
+            <div>
+              <div style="font-weight:900;font-size:.9rem;color:#2E7D32">Payment Successful!</div>
+              <div style="font-size:.75rem;color:#388E3C;margin-top:2px">Payment ID: ${response.razorpay_payment_id||''}</div>
+            </div>
+          </div>`;
+      }
+      showToast('✅ Payment successful!', 'success');
+      /* Auto-confirm order */
+      setTimeout(() => manualConfirmPayment(), 800);
+    },
+
+    modal: {
+      ondismiss: function () {
+        /* User closed the popup without paying */
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = '<span style="font-size:1.3rem">📱</span> Pay ₹' + total + ' Now'; }
+        showToast('Payment cancelled');
+      }
+    },
+  };
+
+  try {
+    const rzp = new Razorpay(options);
+    rzp.on('payment.failed', function (response) {
+      if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = '<span style="font-size:1.3rem">📱</span> Pay ₹' + total + ' Now'; }
+      showToast('❌ Payment failed — try again or scan QR', 'error');
+    });
+    rzp.open();
+  } catch(e) {
+    console.warn('[Razorpay]', e);
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = '<span style="font-size:1.3rem">📱</span> Pay ₹' + total + ' Now'; }
+    showToast('Payment failed to open — please scan QR below');
+  }
+}
+
 function openUpiApp(app) {
   const total  = cart.reduce((s,i) => s+i.price*i.qty, 0);
   const txnRef = 'MMC' + Date.now().toString().slice(-8);
@@ -3652,12 +3753,26 @@ function downloadQR() {
   <button class="pwa-close" onclick="dismissPWA()">✕</button>
 </div>
 
-<!-- ═══ WHATSAPP FLOAT BUTTON ══════════════════════════════ -->
-<button id="waFloat" onclick="openWhatsApp()" title="Chat on WhatsApp">
-  <svg viewBox="0 0 24 24" fill="#fff">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zm-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884z"/>
-  </svg>
-</button>
+<!-- ═══ FLOATING ACTION BUTTONS ═══════════════════════════ -->
+<div id="floatBtns" style="position:fixed;bottom:86px;right:14px;display:flex;flex-direction:row;gap:10px;z-index:9700;align-items:center">
+
+  <!-- Install App — left of WhatsApp -->
+  <button id="installFloat" onclick="installPWA()" title="Install App"
+    style="width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#1A9E8F,#0d6e63);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(26,158,143,.5);animation:install-pulse 3s infinite">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="#fff">
+      <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5v-2z"/>
+    </svg>
+  </button>
+
+  <!-- WhatsApp — right side -->
+  <button id="waFloat" onclick="openWhatsApp()" title="Chat on WhatsApp"
+    style="width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,.5);animation:wa-pulse 2.5s infinite">
+    <svg viewBox="0 0 24 24" width="28" height="28" fill="#fff">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zm-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884z"/>
+    </svg>
+  </button>
+
+</div>
 
 <!-- ═══ SEARCH OVERLAY ══════════════════════════════════════ -->
 <div id="searchOverlay" onclick="closeSearch(event)">
@@ -3767,40 +3882,55 @@ let _deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _deferredPrompt = e;
-  /* Show banner after 5 seconds if not dismissed before */
+  /* Native prompt available — show banner immediately */
   if (!localStorage.getItem('mm_pwa_dismissed')) {
-    setTimeout(() => {
-      document.getElementById('pwaInstallBanner')?.classList.add('show');
-    }, 5000);
+    setTimeout(() => showPWABanner(), 3000);
   }
 });
 
-/* Also show banner if already installed (via appinstalled event) */
 window.addEventListener('appinstalled', () => {
-  document.getElementById('pwaInstallBanner')?.classList.remove('show');
+  hidePWABanner();
   showToast('✅ App installed! Open from your home screen 🎉', 'success');
+  localStorage.setItem('mm_pwa_dismissed', '1');
 });
 
-function installPWA() {
-  document.getElementById('pwaInstallBanner')?.classList.remove('show');
+/* Show banner on load regardless — for all browsers */
+document.addEventListener('DOMContentLoaded', () => {
+  /* Don't show if already dismissed or running as installed PWA */
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                       window.navigator.standalone === true;
+  if (!isStandalone && !localStorage.getItem('mm_pwa_dismissed')) {
+    setTimeout(() => showPWABanner(), 3500);
+  }
+});
 
+function showPWABanner() {
+  const b = document.getElementById('pwaInstallBanner');
+  if (b) b.classList.add('show');
+}
+
+function hidePWABanner() {
+  const b = document.getElementById('pwaInstallBanner');
+  if (b) b.classList.remove('show');
+}
+
+function installPWA() {
+  hidePWABanner();
   if (_deferredPrompt) {
-    /* Native install prompt — Android Chrome */
+    /* Android Chrome — native install */
     _deferredPrompt.prompt();
     _deferredPrompt.userChoice.then(choice => {
-      if (choice.outcome === 'accepted') {
-        showToast('✅ Installing MM Chats app...', 'success');
-      }
+      if (choice.outcome === 'accepted') showToast('✅ Installing MM Chats...', 'success');
       _deferredPrompt = null;
     });
   } else {
-    /* iOS Safari or unsupported — show manual instructions */
+    /* iOS / Samsung — show manual guide */
     _showInstallGuide();
   }
 }
 
 function dismissPWA() {
-  document.getElementById('pwaInstallBanner')?.classList.remove('show');
+  hidePWABanner();
   localStorage.setItem('mm_pwa_dismissed', '1');
 }
 
@@ -4063,7 +4193,7 @@ function showToast(msg, type = 'success') {
 
 const SHOP_OPEN_H  = 16;  /* 4 PM  */
 const SHOP_OPEN_M  = 30;
-const SHOP_CLOSE_H = 21;  /* 9 PM */
+const SHOP_CLOSE_H = 22;  /* 10 PM */
 const SHOP_CLOSE_M = 0;
 
 let _shopIsOpen         = true;
@@ -4331,7 +4461,7 @@ function startShopStatusPolling() {
       MM Chats Center is not taking orders right now.
     </div>
     <div class="sc-time-pill">
-      ⏰ Open Daily 4:30 PM – 9:00 PM
+      ⏰ Open Daily 4:30 PM – 10:00 PM
     </div>
     <div class="sc-countdown-box">
       <div class="sc-countdown-label">Opens in</div>
@@ -4428,12 +4558,7 @@ function startShopStatusPolling() {
   <button class="pwa-close" onclick="dismissPWA()">✕</button>
 </div>
 
-<!-- ═══ WHATSAPP FLOAT BUTTON ══════════════════════════════ -->
-<button id="waFloat" onclick="openWhatsApp()" title="Chat on WhatsApp">
-  <svg viewBox="0 0 24 24" fill="#fff">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zm-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884z"/>
-  </svg>
-</button>
+
 
 <!-- ═══ SEARCH OVERLAY ══════════════════════════════════════ -->
 <div id="searchOverlay" onclick="closeSearch(event)">
