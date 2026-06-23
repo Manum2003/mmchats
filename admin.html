@@ -484,43 +484,13 @@ tr:hover td{background:rgba(255,255,255,.02);}
 }
 
 
-/* ── OUT OF STOCK ── */
+/* ── OUT OF STOCK ─────────────────────────────────────────── */
 .mi-card.oos { opacity:.55; }
 .oos-toggle { display:flex;align-items:center;gap:6px;margin-top:6px; }
 .oos-label  { font-size:.68rem;font-weight:700;color:var(--muted); }
 .oos-pill   { padding:2px 8px;border-radius:20px;font-size:.65rem;font-weight:800;cursor:pointer;border:none;font-family:'Space Grotesk',sans-serif; }
 .oos-pill.in-stock  { background:rgba(72,196,121,.15);color:#48C479; }
 .oos-pill.out-stock { background:rgba(226,55,68,.15);color:#E23744; }
-
-/* ── OUT OF STOCK ─────────────────────────────────────────── */
-function outOfStock(id) {
-  const s = JSON.parse(localStorage.getItem('mmOutOfStock') || '{}');
-  return !!s[id];
-}
-function toggleStock(id, btn) {
-  const s = JSON.parse(localStorage.getItem('mmOutOfStock') || '{}');
-  const nowOOS = !s[id];
-  if (nowOOS) s[id] = true; else delete s[id];
-  localStorage.setItem('mmOutOfStock', JSON.stringify(s));
-  btn.textContent = nowOOS ? '❌ Out of Stock' : '✅ Available';
-  btn.className   = 'oos-pill ' + (nowOOS ? 'out-stock' : 'in-stock');
-  const card = btn.closest('.mi-card');
-  if (card) card.classList.toggle('oos', nowOOS);
-  showAdminToast(nowOOS ? '❌ Marked Out of Stock' : '✅ Marked Available');
-  /* Push to Firebase so customer panel knows */
-  pushStockStatus();
-}
-async function pushStockStatus() {
-  if (!FIREBASE_URL) return;
-  try {
-    const s = JSON.parse(localStorage.getItem('mmOutOfStock') || '{}');
-    await fetch(`${FIREBASE_URL}/mmchats/outOfStock.json`, {
-      method: 'PUT', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(s),
-    });
-  } catch(e) {}
-}
-
 /* ── PREP TIMER ── */
 .prep-timer-wrap { display:flex;align-items:center;gap:5px;margin-top:6px;flex-wrap:wrap; }
 .prep-btn { padding:4px 9px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-size:.7rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:.15s; }
@@ -1117,24 +1087,24 @@ async function pushStockStatus() {
 <!-- MOBILE BOTTOM NAV -->
 <nav class="bottom-nav" id="bottomNav" style="display:none">
   <div class="bottom-nav-inner">
-    <button class="bnav active" onclick="showSection('dashboard');setActiveNav(this)">
+    <button class="bnav active" data-target="dashboard" onclick="showSection('dashboard');setActiveNav(this)">
       <span class="ic"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3h-8z"/></svg></span>
       Home
     </button>
-    <button class="bnav" onclick="showSection('orders');setActiveNav(this)">
+    <button class="bnav" data-target="orders" onclick="showSection('orders');setActiveNav(this)">
       <span class="ic"><svg viewBox="0 0 24 24"><path d="M19.5 3.5L18 2l-1.5 1.5L15 2l-1.5 1.5L12 2l-1.5 1.5L9 2 7.5 3.5 6 2v14H3v3c0 1.66 1.34 3 3 3h12c1.66 0 3-1.34 3-3V2l-1.5 1.5zM19 19c0 .55-.45 1-1 1H6c-.55 0-1-.45-1-1v-1h14v1zM18 16H6V4h12v12z"/></svg></span>
       Orders
       <span class="bnav-badge" id="pendingBadge">0</span>
     </button>
-    <button class="bnav" onclick="showSection('history');setActiveNav(this)">
+    <button class="bnav" data-target="history" onclick="showSection('history');setActiveNav(this)">
       <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg></span>
       History
     </button>
-    <button class="bnav" onclick="showSection('menu');setActiveNav(this)">
+    <button class="bnav" data-target="menu" onclick="showSection('menu');setActiveNav(this)">
       <span class="ic"><svg viewBox="0 0 24 24"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg></span>
       Menu
     </button>
-    <button class="bnav" onclick="showSection('revenue');setActiveNav(this)">
+    <button class="bnav" data-target="revenue" onclick="showSection('revenue');setActiveNav(this)">
       <span class="ic"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></span>
       Revenue
     </button>
@@ -1880,6 +1850,35 @@ function getAllItems() {
   return [...base, ...getCustomItems()];
 }
 
+/* ── OUT OF STOCK (moved here from the CSS block where it didn't belong) ── */
+function outOfStock(id) {
+  const s = JSON.parse(localStorage.getItem('mmOutOfStock') || '{}');
+  return !!s[id];
+}
+function toggleStock(id, btn) {
+  const s = JSON.parse(localStorage.getItem('mmOutOfStock') || '{}');
+  const nowOOS = !s[id];
+  if (nowOOS) s[id] = true; else delete s[id];
+  localStorage.setItem('mmOutOfStock', JSON.stringify(s));
+  btn.textContent = nowOOS ? '❌ Out of Stock' : '✅ Available';
+  btn.className   = 'oos-pill ' + (nowOOS ? 'out-stock' : 'in-stock');
+  const card = btn.closest('.mi-card');
+  if (card) card.classList.toggle('oos', nowOOS);
+  showAdminToast(nowOOS ? '❌ Marked Out of Stock' : '✅ Marked Available');
+  /* Push to Firebase so customer panel knows */
+  pushStockStatus();
+}
+async function pushStockStatus() {
+  if (!FIREBASE_URL) return;
+  try {
+    const s = JSON.parse(localStorage.getItem('mmOutOfStock') || '{}');
+    await fetch(`${FIREBASE_URL}/mmchats/outOfStock.json`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(s),
+    });
+  } catch(e) {}
+}
+
 /* Active = pending/preparing/out_for_delivery  |  History = delivered */
 function getActiveOrders()  { return _ordersCache.filter(o=>o.status!=='delivered'&&o.status!=='cancelled'); }
 function getHistoryOrders() { return _ordersCache.filter(o=>o.status==='delivered'); }
@@ -2059,12 +2058,8 @@ function closeSidebar() {
   document.body.style.overflow = '';
 }
 
-/* Close sidebar when nav item tapped on mobile */
-const _origShowSection = showSection;
-function showSection(target) {
-  if (window.innerWidth <= 768) closeSidebar();
-  _origShowSection(target);
-}
+/* Mobile sidebar auto-close on nav tap is handled inside the real
+   showSection() function below (search "function showSection(target){") */
 
 /** Request browser notification permission on first load */
 function requestNotifPermission() {
@@ -3700,6 +3695,7 @@ function showAdminToast(msg){
 /* ── SPA NAVIGATION ──────────────────────────────────────── */
 let currentSection='dashboard';
 function showSection(target){
+  if (window.innerWidth <= 768) closeSidebar();
   document.querySelectorAll('.admin-section').forEach(s=>{s.classList.remove('section-visible');s.style.display='none';});
   const el=document.getElementById('section-'+target);
   if(!el)return;
@@ -4101,7 +4097,15 @@ function renderRevenue(){
   const orders=getOrders();
   const catRev={belpuri:0,sev:0,bun:0,masala:0,slice:0,sprouts:0};
   let totalRev=0,totalSaved=0;
-  orders.forEach(o=>{o.items.forEach(i=>{if(catRev[i.cat]!==undefined)catRev[i.cat]+=i.price*i.qty;totalRev+=i.price*i.qty;totalSaved+=((i.mrp||90)-i.price)*i.qty;});});
+  orders.forEach(o=>{
+    if (!o || !Array.isArray(o.items)) return; /* skip malformed/legacy orders safely */
+    o.items.forEach(i=>{
+      if (!i) return;
+      if(catRev[i.cat]!==undefined)catRev[i.cat]+=(i.price||0)*(i.qty||0);
+      totalRev+=(i.price||0)*(i.qty||0);
+      totalSaved+=((i.mrp||90)-(i.price||0))*(i.qty||0);
+    });
+  });
   /* Use permanent stored total if higher (survives history clear) */
   const permTotal = parseInt(localStorage.getItem('mmTotalRevenue') || '0');
   if (permTotal > totalRev) totalRev = permTotal;
@@ -4111,9 +4115,13 @@ function renderRevenue(){
   document.getElementById('revChart').innerHTML=Object.entries(catRev).map(([k,v])=>`<div class="rev-row"><div class="rev-label">${catLabels[k]||k}</div><div class="rev-track"><div class="rev-bar" style="width:${((v/maxVal)*100)||3}%;background:${catClrs[k]||'#888'}">${v>0?'₹'+v:''}</div></div><div class="rev-val">₹${v}</div></div>`).join('');
   /* ── Top 5 Selling Items ── */
   const itemSales = {};
-  orders.forEach(o => o.items.forEach(i => {
-    itemSales[i.name] = (itemSales[i.name] || 0) + i.qty;
-  }));
+  orders.forEach(o => {
+    if (!o || !Array.isArray(o.items)) return;
+    o.items.forEach(i => {
+      if (!i || !i.name) return;
+      itemSales[i.name] = (itemSales[i.name] || 0) + (i.qty||0);
+    });
+  });
   const top5 = Object.entries(itemSales)
     .sort((a,b) => b[1]-a[1]).slice(0,5);
   const topEl = document.getElementById('topItemsWrap');
@@ -4422,7 +4430,7 @@ document.addEventListener('DOMContentLoaded', () => {
 /* ══════════════════════════════════════════════════════════════
    SHOP OPEN / CLOSED SYSTEM
    ─────────────────────────────────────────────────────────────
-   Shop hours: 4:30 PM (16:30) to 10:00 PM (22:00)
+   Shop hours: 4:30 PM (16:30) to 9:00 PM (21:00)
    
    Logic:
    • Auto mode: opens/closes based on time automatically
@@ -4436,7 +4444,7 @@ document.addEventListener('DOMContentLoaded', () => {
    SHOP STATUS SYSTEM — ZOMATO RESTAURANT PATTERN
    ─────────────────────────────────────────────────────────────
    Modes:
-   • auto          → follows 4:30–10:00 PM schedule
+   • auto          → follows 4:30–9:00 PM schedule
    • manual_open   → forced open (outside hours)
    • manual_closed → forced closed (holiday, etc.)
    • holiday_until → closed until a specific date/time
@@ -4450,7 +4458,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const SHOP_OPEN_H  = 16;   /* 4 PM  */
 const SHOP_OPEN_M  = 30;   /* :30   */
-const SHOP_CLOSE_H = 22;   /* 10 PM  */
+const SHOP_CLOSE_H = 21;   /* 9 PM  */
 const SHOP_CLOSE_M = 0;    /* :00   */
 
 let shopMode    = localStorage.getItem('mmShopMode')  || 'auto';
@@ -4491,7 +4499,7 @@ async function broadcastShopStatus(isOpen) {
     updatedAt:      Date.now(),
     openedByDevice: isOpen ? myDeviceId : null,
     openTime:       '4:30 PM',
-    closeTime:      '10:00 PM',
+    closeTime:      '9:00 PM',
   };
 
   /* 1. Save locally immediately */
@@ -4773,7 +4781,7 @@ function initShopStatus() {
       const s = {
         isOpen: false, mode: 'manual_closed',
         updatedAt: Date.now(), openedByDevice: null,
-        openTime: '4:30 PM', closeTime: '10:00 PM'
+        openTime: '4:30 PM', closeTime: '9:00 PM'
       };
       localStorage.setItem('mmShopStatus', JSON.stringify(s));
       if (FIREBASE_URL) {
