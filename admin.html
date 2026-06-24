@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>MM Chats Admin</title>
+<link rel="manifest" href="/manifest-admin.json">
+<meta name="theme-color" content="#1A9E8F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MM Admin">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
 <style>
 /* ══ VARIABLES ════════════════════════════════════════════ */
@@ -4815,6 +4821,58 @@ function initShopStatus() {
 <div id="kotPrintArea">
   <div id="kotContent"></div>
 </div>
+
+<!-- Install Admin App — bottom LEFT -->
+<button id="installFloatAdmin" onclick="installPWAAdmin()" title="Install Admin App"
+  style="position:fixed;bottom:86px;left:14px;width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#1A9E8F,#0d6e63);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(26,158,143,.5);z-index:9700">
+  <svg viewBox="0 0 24 24" width="24" height="24" fill="#fff">
+    <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5v-2z"/>
+  </svg>
+</button>
+
+<script>
+/* ── PWA INSTALL — Admin Panel ───────────────────────────── */
+let _deferredPromptAdmin = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredPromptAdmin = e;
+});
+
+function installPWAAdmin() {
+  if (_deferredPromptAdmin) {
+    _deferredPromptAdmin.prompt();
+    _deferredPromptAdmin.userChoice.then(() => { _deferredPromptAdmin = null; });
+  } else {
+    /* iOS / unsupported browser — show manual guide */
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const old = document.getElementById('pwaGuideModalAdmin');
+    if (old) old.remove();
+    const m = document.createElement('div');
+    m.id = 'pwaGuideModalAdmin';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99999;display:flex;align-items:flex-end;justify-content:center;font-family:Space Grotesk,sans-serif';
+    const steps = isIOS
+      ? `Tap the Share icon at the bottom of Safari, then scroll down and tap "Add to Home Screen".`
+      : `Tap the menu (⋮) in your browser, then tap "Add to Home Screen" or "Install App".`;
+    m.innerHTML = `
+      <div style="background:#1C1C27;border-radius:20px 20px 0 0;width:100%;max-width:440px;padding:22px 20px 36px;color:#fff">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div style="font-size:1rem;font-weight:800">📱 Install MM Admin</div>
+          <button onclick="document.getElementById('pwaGuideModalAdmin').remove()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer">✕</button>
+        </div>
+        <div style="font-size:.85rem;color:#9CA3AF;line-height:1.7">${steps}</div>
+      </div>`;
+    m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+    document.body.appendChild(m);
+  }
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw-admin.js').catch(() => {});
+  });
+}
+</script>
 
 </body>
 </html>
