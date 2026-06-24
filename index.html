@@ -230,84 +230,63 @@
 .star-rate.active{filter:none;transform:scale(1.1);}
 
 
-/* ═══ PWA INSTALL POPUP (centered modal) ══════════════════ */
+/* ═══ PWA INSTALL BANNER (bottom slide-up) ═════════════════ */
 #pwaInstallOverlay {
-  position: fixed; inset: 0; z-index: 9800;
-  background: rgba(15,15,20,.6);
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  display: none; align-items: center; justify-content: center;
-  padding: 24px;
-  opacity: 0; transition: opacity .25s ease;
+  position: fixed; left: 12px; right: 12px; bottom: 80px;
+  z-index: 9800;
+  pointer-events: none;
 }
-#pwaInstallOverlay.show { display: flex; opacity: 1; }
+#pwaInstallOverlay.show { pointer-events: auto; }
 
 #pwaInstallPopup {
-  background: #fff; border-radius: 28px; padding: 32px 26px 26px;
-  max-width: 340px; width: 100%; text-align: center;
-  position: relative;
-  box-shadow: 0 24px 64px rgba(0,0,0,.35);
-  transform: scale(.85) translateY(20px); opacity: 0;
-  transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .3s ease;
+  background: #fff; border-radius: 18px;
+  padding: 14px 14px 14px 12px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 10px 36px rgba(0,0,0,.18);
+  border: 1px solid rgba(0,0,0,.06);
+  transform: translateY(120%); opacity: 0;
+  transition: transform .4s cubic-bezier(.34,1.56,.64,1), opacity .35s ease;
 }
 #pwaInstallOverlay.show #pwaInstallPopup {
-  transform: scale(1) translateY(0); opacity: 1;
+  transform: translateY(0); opacity: 1;
 }
 
-.pwa-popup-close {
-  position: absolute; top: 14px; right: 14px;
-  width: 30px; height: 30px; border-radius: 50%;
-  background: #F5F5F0; border: none; color: #888;
-  font-size: .9rem; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-}
-
-.pwa-popup-icon {
-  width: 76px; height: 76px; border-radius: 22px;
+.pwa-banner-icon {
+  width: 46px; height: 46px; border-radius: 13px; flex-shrink: 0;
   background: linear-gradient(135deg, #E8F8F5, #D4F0EA);
   display: flex; align-items: center; justify-content: center;
-  font-size: 2.6rem; margin: 0 auto 18px;
-  box-shadow: 0 6px 20px rgba(26,158,143,.18);
+  font-size: 1.6rem;
   animation: pwa-bounce 2.4s ease-in-out infinite;
 }
 @keyframes pwa-bounce {
   0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-6px); }
+  50%      { transform: translateY(-4px); }
 }
 
-.pwa-popup-title {
-  font-size: 1.25rem; font-weight: 900; color: #111;
-  letter-spacing: -.3px; margin-bottom: 8px;
+.pwa-banner-text { flex: 1; min-width: 0; }
+.pwa-banner-title {
+  font-size: .88rem; font-weight: 800; color: #111;
+  letter-spacing: -.2px; font-family: 'Nunito', sans-serif;
+}
+.pwa-banner-sub {
+  font-size: .72rem; color: #888; margin-top: 2px;
   font-family: 'Nunito', sans-serif;
-}
-.pwa-popup-sub {
-  font-size: .84rem; color: #777; line-height: 1.55;
-  margin-bottom: 20px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-.pwa-popup-features {
-  background: #F8F8F5; border-radius: 14px;
-  padding: 14px 16px; margin-bottom: 22px;
-  text-align: left;
-}
-.pwa-feature {
-  display: flex; align-items: center; gap: 10px;
-  font-size: .82rem; color: #444; font-weight: 600;
-  padding: 6px 0;
-}
-.pwa-feature span:first-child { font-size: 1.05rem; flex-shrink: 0; }
-
-.pwa-popup-install-btn {
-  width: 100%; background: linear-gradient(135deg, #1A9E8F, #0d8a7a);
-  color: #fff; border: none; border-radius: 14px;
-  padding: 15px; font-size: 1rem; font-weight: 800;
+.pwa-banner-install-btn {
+  background: linear-gradient(135deg, #1A9E8F, #0d8a7a);
+  color: #fff; border: none; border-radius: 10px;
+  padding: 9px 16px; font-size: .82rem; font-weight: 800;
   cursor: pointer; font-family: 'Nunito', sans-serif;
-  box-shadow: 0 6px 20px rgba(26,158,143,.4);
-  margin-bottom: 10px;
+  flex-shrink: 0; white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(26,158,143,.35);
 }
-.pwa-popup-later-btn {
-  width: 100%; background: none; border: none;
-  color: #999; font-size: .84rem; font-weight: 700;
-  padding: 6px; cursor: pointer; font-family: 'Nunito', sans-serif;
+.pwa-banner-close {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  background: #F5F5F0; border: none; color: #999;
+  font-size: .78rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
 }
 
 /* ═══ WHATSAPP FLOAT ══════════════════════════════════════ */
@@ -3863,41 +3842,31 @@ function downloadQR() {
   </div>
 </div>
 
-<!-- ═══ PWA INSTALL POPUP (centered modal) ════════════════════ -->
-<div id="pwaInstallOverlay" onclick="if(event.target.id==='pwaInstallOverlay') dismissPWA()">
+<!-- ═══ PWA INSTALL BANNER (bottom slide-up) ══════════════════ -->
+<div id="pwaInstallOverlay">
   <div id="pwaInstallPopup">
-    <button class="pwa-popup-close" onclick="dismissPWA()">✕</button>
-
-    <div class="pwa-popup-icon">🍱</div>
-
-    <div class="pwa-popup-title">Install MM Chats</div>
-    <div class="pwa-popup-sub">Get the app experience — faster, offline-ready, right on your home screen</div>
-
-    <div class="pwa-popup-features">
-      <div class="pwa-feature"><span>⚡</span> Opens instantly, no browser bar</div>
-      <div class="pwa-feature"><span>📶</span> Works even with poor internet</div>
-      <div class="pwa-feature"><span>🔔</span> Get order updates faster</div>
+    <div class="pwa-banner-icon">🍱</div>
+    <div class="pwa-banner-text">
+      <div class="pwa-banner-title">Install MM Chats App</div>
+      <div class="pwa-banner-sub">Faster · Works offline · One tap to order</div>
     </div>
-
-    <button class="pwa-popup-install-btn" onclick="installPWA()">
-      ⬇️ Install Now
-    </button>
-    <button class="pwa-popup-later-btn" onclick="dismissPWA()">Maybe later</button>
+    <button class="pwa-banner-install-btn" onclick="installPWA()">Install</button>
+    <button class="pwa-banner-close" onclick="dismissPWA()">✕</button>
   </div>
 </div>
 
 <!-- ═══ FLOATING ACTION BUTTONS ═══════════════════════════ -->
+<!-- Install App — bottom LEFT, standalone -->
+<button id="installFloat" onclick="installPWA()" title="Install App"
+  style="position:fixed;bottom:86px;left:14px;width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#1A9E8F,#0d6e63);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(26,158,143,.5);animation:install-pulse 3s infinite;z-index:9700">
+  <svg viewBox="0 0 24 24" width="24" height="24" fill="#fff">
+    <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5v-2z"/>
+  </svg>
+</button>
+
 <div id="floatBtns" style="position:fixed;bottom:86px;right:14px;display:flex;flex-direction:row;gap:10px;z-index:9700;align-items:center">
 
-  <!-- Install App — left of WhatsApp -->
-  <button id="installFloat" onclick="installPWA()" title="Install App"
-    style="width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#1A9E8F,#0d6e63);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(26,158,143,.5);animation:install-pulse 3s infinite">
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="#fff">
-      <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5v-2z"/>
-    </svg>
-  </button>
-
-  <!-- WhatsApp — right side -->
+  <!-- WhatsApp — bottom RIGHT -->
   <button id="waFloat" onclick="openWhatsApp()" title="Chat on WhatsApp"
     style="width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,.5);animation:wa-pulse 2.5s infinite">
     <svg viewBox="0 0 24 24" width="28" height="28" fill="#fff">
@@ -4015,9 +3984,14 @@ let _deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _deferredPrompt = e;
-  /* Native prompt available — show banner immediately */
+  /* Native prompt available — wait for auth modal to clear first */
   if (!localStorage.getItem('mm_pwa_dismissed')) {
-    setTimeout(() => showPWABanner(), 3000);
+    const tryShow = () => {
+      const authModal = document.getElementById('authModal');
+      const authIsOpen = authModal && !authModal.classList.contains('hidden');
+      if (authIsOpen) { setTimeout(tryShow, 800); } else { showPWABanner(); }
+    };
+    setTimeout(tryShow, 3000);
   }
 });
 
@@ -4032,9 +4006,22 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Don't show if already dismissed or running as installed PWA */
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                        window.navigator.standalone === true;
-  if (!isStandalone && !localStorage.getItem('mm_pwa_dismissed')) {
-    setTimeout(() => showPWABanner(), 3500);
-  }
+  if (isStandalone || localStorage.getItem('mm_pwa_dismissed')) return;
+
+  /* Wait until the auth/login modal (if shown) is closed before
+     showing the PWA popup — two full-screen overlays should never
+     compete for attention at the same time. */
+  const tryShowPWAPopup = () => {
+    const authModal = document.getElementById('authModal');
+    const authIsOpen = authModal && !authModal.classList.contains('hidden');
+    if (authIsOpen) {
+      /* Check again shortly — wait for the user to finish with login */
+      setTimeout(tryShowPWAPopup, 800);
+    } else {
+      showPWABanner();
+    }
+  };
+  setTimeout(tryShowPWAPopup, 3500);
 });
 
 function showPWABanner() {
