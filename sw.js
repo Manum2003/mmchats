@@ -1,9 +1,8 @@
-/* MM Chats Center — Service Worker v2.0 */
-const CACHE_NAME = 'mmchats-v2';
+/* MM Chats Admin — Service Worker v1.0 */
+const CACHE_NAME = 'mmchats-admin-v1';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
+  '/admin.html',
+  '/manifest-admin.json',
   '/icon-192.png',
   '/icon-512.png',
 ];
@@ -29,23 +28,26 @@ self.addEventListener('activate', e => {
   );
 });
 
-/* Fetch: cache-first for static, network-first for API */
+/* Fetch: cache-first for static, network-first for all live APIs.
+   Admin relies on live data (orders, delivery booking, payments) —
+   never serve those from cache. */
 self.addEventListener('fetch', e => {
   const url = e.request.url;
 
-  /* Skip non-GET requests */
   if (e.request.method !== 'GET') return;
 
-  /* Skip external API calls — always use network */
+  /* Always hit the network for anything live/dynamic */
   if (url.includes('firebase') ||
       url.includes('telegram') ||
       url.includes('porter') ||
       url.includes('shadowfax') ||
+      url.includes('uber.com') ||
+      url.includes('borzodelivery') ||
+      url.includes('razorpay') ||
       url.includes('googleapis.com/chart')) return;
 
   e.respondWith(
     caches.match(e.request).then(cached => {
-      /* Serve from cache, update in background */
       const fetchPromise = fetch(e.request)
         .then(resp => {
           if (resp && resp.status === 200 && resp.type !== 'opaque') {
@@ -56,7 +58,7 @@ self.addEventListener('fetch', e => {
         })
         .catch(() => null);
 
-      return cached || fetchPromise || caches.match('/index.html');
+      return cached || fetchPromise || caches.match('/admin.html');
     })
   );
 });
