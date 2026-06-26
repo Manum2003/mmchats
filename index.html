@@ -3802,96 +3802,7 @@ function downloadQR() {
       w.document.write(`<!DOCTYPE html><html><body style="margin:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh">
         <img src="${img.src}" style="max-width:100%;border-radius:12px">
         <p style="color:#fff;font-family:sans-serif;margin-top:16px">📱 Long press the image → Save to Gallery</p>
-      
-<!-- ═══ HERO SLIDER ════════════════════════════════════════ -->
-<div id="heroSlider">
-  <div class="hero-track" id="heroTrack">
-    <div class="hero-slide hero-slide-1">
-      <div>
-        <div class="hero-badge">🎉 MM Chats Offer</div>
-        <div class="hero-title">₹30 cheaper than Zomato!</div>
-        <div class="hero-sub">Order direct · Save more</div>
-      </div>
-      <div class="hero-emoji">🥙</div>
-      <div class="hero-dots" id="heroDots"></div>
-    </div>
-    <div class="hero-slide hero-slide-2">
-      <div>
-        <div class="hero-badge">⚡ Fast Delivery</div>
-        <div class="hero-title">Fresh Belpuri in 30 min</div>
-        <div class="hero-sub">Hot · Hygienic · Homely</div>
-      </div>
-      <div class="hero-emoji">🍱</div>
-    </div>
-    <div class="hero-slide hero-slide-3">
-      <div>
-        <div class="hero-badge">🌱 Healthy</div>
-        <div class="hero-title">Sprouts & Fresh Masalas</div>
-        <div class="hero-sub">Protein rich · Light · Tasty</div>
-      </div>
-      <div class="hero-emoji">🥗</div>
-    </div>
-    <div class="hero-slide hero-slide-4">
-      <div>
-        <div class="hero-badge">🛵 Free Delivery</div>
-        <div class="hero-title">No delivery charge!</div>
-        <div class="hero-sub">Within 5km · Order now</div>
-      </div>
-      <div class="hero-emoji">🛵</div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ PWA INSTALL BANNER (bottom slide-up) ══════════════════ -->
-<div id="pwaInstallOverlay">
-  <div id="pwaInstallPopup">
-    <div class="pwa-banner-icon">🍱</div>
-    <div class="pwa-banner-text">
-      <div class="pwa-banner-title">Install MM Chats App</div>
-      <div class="pwa-banner-sub">Faster · Works offline · One tap to order</div>
-    </div>
-    <button class="pwa-banner-install-btn" onclick="installPWA()">Install</button>
-    <button class="pwa-banner-close" onclick="dismissPWA()">✕</button>
-  </div>
-</div>
-
-<!-- ═══ FLOATING ACTION BUTTONS ═══════════════════════════ -->
-<!-- Install App — bottom LEFT, standalone -->
-<button id="installFloat" onclick="installPWA()" title="Install App"
-  style="position:fixed;bottom:86px;left:14px;width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#1A9E8F,#0d6e63);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(26,158,143,.5);animation:install-pulse 3s infinite;z-index:9700">
-  <svg viewBox="0 0 24 24" width="24" height="24" fill="#fff">
-    <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5v-2z"/>
-  </svg>
-</button>
-
-<div id="floatBtns" style="position:fixed;bottom:86px;right:14px;display:flex;flex-direction:row;gap:10px;z-index:9700;align-items:center">
-
-  <!-- WhatsApp — bottom RIGHT -->
-  <button id="waFloat" onclick="openWhatsApp()" title="Chat on WhatsApp"
-    style="width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,.5);animation:wa-pulse 2.5s infinite">
-    <svg viewBox="0 0 24 24" width="28" height="28" fill="#fff">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zm-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884z"/>
-    </svg>
-  </button>
-
-</div>
-
-<!-- ═══ SEARCH OVERLAY ══════════════════════════════════════ -->
-<div id="searchOverlay" onclick="closeSearch(event)">
-  <div id="searchPanel">
-    <div class="search-input-wrap">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="#999">
-        <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-      </svg>
-      <input id="searchInput" type="text" placeholder="Search belpuri, masala, sev puri..."
-             oninput="liveSearch(this.value)" autocomplete="off">
-      <button onclick="closeSearch()" style="background:none;border:none;color:#999;font-size:1.1rem;cursor:pointer;padding:0">✕</button>
-    </div>
-    <div class="search-suggestions" id="searchSuggestions"></div>
-  </div>
-</div>
-
-</body></html>`);
+      </body></html>`);
     }
   }
 }
@@ -3984,6 +3895,7 @@ let _deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _deferredPrompt = e;
+  console.log('[PWA] beforeinstallprompt captured successfully');
   /* Native prompt available — wait for auth modal to clear first */
   if (!localStorage.getItem('mm_pwa_dismissed')) {
     const tryShow = () => {
@@ -4038,13 +3950,18 @@ function installPWA() {
   hidePWABanner();
   if (_deferredPrompt) {
     /* Android Chrome — native install */
+    showToast('🔧 Opening install prompt...', 'success');
     _deferredPrompt.prompt();
     _deferredPrompt.userChoice.then(choice => {
       if (choice.outcome === 'accepted') showToast('✅ Installing MM Chats...', 'success');
+      else showToast('Install dismissed', 'error');
       _deferredPrompt = null;
+    }).catch(err => {
+      showToast('⚠️ Prompt error: ' + err.message, 'error');
     });
   } else {
-    /* iOS / Samsung — show manual guide */
+    /* No captured prompt — show why, then fall back to guide */
+    showToast('⚠️ No install prompt captured — showing manual guide', 'error');
     _showInstallGuide();
   }
 }
@@ -4668,6 +4585,40 @@ function startShopStatusPolling() {
       <div class="hero-emoji">🛵</div>
     </div>
   </div>
+</div>
+
+<!-- ═══ PWA INSTALL BANNER (bottom slide-up) ══════════════════ -->
+<div id="pwaInstallOverlay">
+  <div id="pwaInstallPopup">
+    <div class="pwa-banner-icon">🍱</div>
+    <div class="pwa-banner-text">
+      <div class="pwa-banner-title">Install MM Chats App</div>
+      <div class="pwa-banner-sub">Faster · Works offline · One tap to order</div>
+    </div>
+    <button class="pwa-banner-install-btn" onclick="installPWA()">Install</button>
+    <button class="pwa-banner-close" onclick="dismissPWA()">✕</button>
+  </div>
+</div>
+
+<!-- ═══ FLOATING ACTION BUTTONS ═══════════════════════════ -->
+<!-- Install App — bottom LEFT, standalone -->
+<button id="installFloat" onclick="installPWA()" title="Install App"
+  style="position:fixed;bottom:86px;left:14px;width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#1A9E8F,#0d6e63);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(26,158,143,.5);animation:install-pulse 3s infinite;z-index:9700">
+  <svg viewBox="0 0 24 24" width="24" height="24" fill="#fff">
+    <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5v-2z"/>
+  </svg>
+</button>
+
+<div id="floatBtns" style="position:fixed;bottom:86px;right:14px;display:flex;flex-direction:row;gap:10px;z-index:9700;align-items:center">
+
+  <!-- WhatsApp — bottom RIGHT -->
+  <button id="waFloat" onclick="openWhatsApp()" title="Chat on WhatsApp"
+    style="width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,.5);animation:wa-pulse 2.5s infinite">
+    <svg viewBox="0 0 24 24" width="28" height="28" fill="#fff">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zm-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884z"/>
+    </svg>
+  </button>
+
 </div>
 
 <!-- ═══ SEARCH OVERLAY ══════════════════════════════════════ -->
