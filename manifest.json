@@ -1,29 +1,83 @@
 {
-  "name": "MM Chats Admin",
-  "short_name": "MM Admin",
-  "description": "Admin dashboard for MM Chats Center — manage orders, menu, and deliveries",
-  "start_url": "/admin.html",
-  "scope": "/",
+  "name": "MMChats — Street Food Delivered",
+  "short_name": "MMChats",
+  "description": "Bengaluru's favourite street food, delivered fast. Belpuri, Masala, Sev Puri & more — all ₹60.",
+  "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#0D0D17",
-  "theme_color": "#1A9E8F",
+  "background_color": "#F7F5F2",
+  "theme_color": "#FF4D00",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["food", "shopping"],
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "icons/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "icons/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-  "categories": ["business", "productivity"],
-  "lang": "en-IN",
-  "dir": "ltr",
+  "screenshots": [
+    {
+      "src": "screenshots/home.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "MMChats Home Screen"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Order Now",
+      "short_name": "Order",
+      "description": "Browse our full menu",
+      "url": "/?ref=shortcut",
+      "icons": [{"src": "icons/icon-96.png", "sizes": "96x96"}]
+    }
+  ],
+  "related_applications": [],
   "prefer_related_applications": false
 }
