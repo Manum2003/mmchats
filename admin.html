@@ -2260,7 +2260,6 @@ async function _tryBorzo(order) {
     const track=bo.tracking_url||'';
     await _saveDelivery(order.id,{provider:'borzo',providerId:bo.order_id||bo.id,riderName:rName,riderPhone:rPhone,eta:eta,trackingLink:track,fee:bo.payment_amount||0});
     _setDeliveryStatus(order.id,'booked','Borzo: '+rName+(rPhone?' | '+rPhone:'')+' | ETA '+eta);
-    _tgDelivery(order,'Borzo',rName,rPhone,eta);
     _startBorzoPoll(order.id, bo.order_id||bo.id);
     showAdminToast('Borzo booked! ETA '+eta);
     renderActiveOrders();
@@ -2305,7 +2304,6 @@ async function _tryShadowfax(order) {
     const rName=rider&&rider.name||'Assigning...'; const rPhone=rider&&rider.phone||''; const eta=d.eta||'20 min';
     await _saveDelivery(order.id,{provider:'shadowfax',providerId:d.order_id||d.id,riderName:rName,riderPhone:rPhone,eta:eta,trackingLink:d.tracking_url||''});
     _setDeliveryStatus(order.id,'booked','Shadowfax: '+rName+(rPhone?' | '+rPhone:'')+' | ETA '+eta);
-    _tgDelivery(order,'Shadowfax',rName,rPhone,eta);
     showAdminToast('Shadowfax booked! ETA '+eta); renderActiveOrders(); return true;
   } catch(e) { console.warn('[Shadowfax]',e.message); return false; }
 }
@@ -2320,7 +2318,6 @@ async function _tryPorter(order) {
     const rName=rider&&rider.name||'Assigning...'; const rPhone=rider&&rider.phone||''; const eta=(d.eta_pickup_minutes||d.eta||15)+' min';
     await _saveDelivery(order.id,{provider:'porter',providerId:d.order_id||d.id,riderName:rName,riderPhone:rPhone,eta:eta,trackingLink:d.tracking_url||''});
     _setDeliveryStatus(order.id,'booked','Porter: '+rName+(rPhone?' | '+rPhone:'')+' | ETA '+eta);
-    _tgDelivery(order,'Porter',rName,rPhone,eta);
     showAdminToast('Porter booked! ETA '+eta); renderActiveOrders(); return true;
   } catch(e) { console.warn('[Porter]',e.message); return false; }
 }
@@ -2436,9 +2433,9 @@ async function pullAndSync() {
       if (!lastKnownIds.has(fo.id)) {
         lastKnownIds.add(fo.id);
         if (_notifyReady) {
-          /* Truly new order — alert admin */
+          /* Truly new order — alert admin (showNewOrderBanner already
+             calls notifyNewOrder internally, so we don't call it twice here) */
           showNewOrderBanner(fo);
-          notifyNewOrder(fo);
         }
       }
     });
@@ -3046,7 +3043,6 @@ async function autoBookUber(order) {
 
     await _saveDelivery(order.id,{provider:'uber',providerId:deliveryId,riderName:riderName,riderPhone:riderPhone,eta:eta+' min',trackingLink:trackUrl,fee:quotedFee});
     _setDeliveryStatus(order.id,'booked','Uber: '+riderName+(riderPhone?' | '+riderPhone:'')+' | ETA '+eta+' min');
-    _tgDelivery(order,'Uber Direct',riderName,riderPhone,eta+' min');
     showAdminToast('Uber Direct booked! ETA '+eta+' min | Fee Rs.'+quotedFee);
     _startUberPoll(order.id, deliveryId, token);
     renderActiveOrders();
@@ -4842,7 +4838,10 @@ window.addEventListener('beforeinstallprompt', e => {
 function installPWAAdmin() {
   if (_deferredPromptAdmin) {
     _deferredPromptAdmin.prompt();
-    _deferredPromptAdmin.userChoice.then(() => { _deferredPromptAdmin = null; });
+    _deferredPromptAdmin.userChoice.then(choice => {
+      if (choice.outcome === 'accepted') showAdminToast('✅ Added to home screen!');
+      _deferredPromptAdmin = null;
+    });
   } else {
     /* iOS / unsupported browser — show manual guide */
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
