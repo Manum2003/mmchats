@@ -719,7 +719,16 @@ body {
   display:flex; flex-direction:column;
   align-items:center; gap:8px;
   flex-shrink:0;
+  position:relative;
 }
+.mi-fav-btn {
+  position:absolute; top:6px; right:6px; z-index:2;
+  width:28px; height:28px; border-radius:50%;
+  background:rgba(255,255,255,.9); border:none; cursor:pointer;
+  font-size:.95rem; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 1px 4px rgba(0,0,0,.15); transition:transform .15s;
+}
+.mi-fav-btn:active { transform:scale(.85); }
 .mi-img-wrap {
   width: 130px;
   height: 110px;
@@ -1598,6 +1607,60 @@ body {
   body { background:#E8E8E8; }
   .app-wrapper { max-width:480px; margin:0 auto; background:var(--bg); min-height:100vh; box-shadow:0 0 40px rgba(0,0,0,.12); }
 }
+
+/* ✨ ACCOUNT PAGE */
+.acct-row {
+  display:flex; align-items:center; gap:14px;
+  padding:16px 18px;
+  border-bottom:1px solid var(--border);
+  cursor:pointer; transition:background .15s;
+}
+.acct-row:active { background:var(--bg); }
+.acct-icon { font-size:1.3rem; flex-shrink:0; width:24px; text-align:center; }
+.acct-row-label { flex:1; font-size:1rem; font-weight:700; color:var(--text); }
+.acct-chevron { color:var(--muted); font-size:1.3rem; flex-shrink:0; }
+
+.acct-subpage-header {
+  display:flex; align-items:center; gap:12px;
+  padding:16px 18px;
+  background:#fff; border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:5;
+}
+.acct-back-btn {
+  width:38px; height:38px; border-radius:50%;
+  background:var(--bg); border:none; font-size:1.1rem;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; color:var(--text);
+}
+.acct-subpage-title { font-size:1.05rem; font-weight:800; color:var(--text); }
+
+.fav-item-card {
+  display:flex; align-items:center; gap:12px;
+  background:#fff; border-radius:14px; padding:12px;
+  margin-bottom:10px; box-shadow:0 1px 6px rgba(0,0,0,.06);
+}
+.fav-item-emoji { width:52px; height:52px; border-radius:10px; background:var(--teal-lt); display:flex; align-items:center; justify-content:center; font-size:1.6rem; flex-shrink:0; }
+.fav-item-name { font-size:.92rem; font-weight:800; color:var(--text); }
+.fav-item-price { font-size:.82rem; color:var(--teal); font-weight:700; margin-top:2px; }
+.fav-remove-btn { width:34px; height:34px; border-radius:50%; background:var(--bg); border:none; cursor:pointer; font-size:1rem; flex-shrink:0; }
+
+.addr-card {
+  background:#fff; border-radius:14px; padding:14px;
+  margin-bottom:10px; box-shadow:0 1px 6px rgba(0,0,0,.06);
+  display:flex; align-items:flex-start; gap:12px;
+}
+.addr-card-icon { font-size:1.3rem; flex-shrink:0; }
+.addr-card-label { font-size:.88rem; font-weight:800; color:var(--text); }
+.addr-card-text { font-size:.82rem; color:var(--sub); margin-top:3px; line-height:1.4; }
+.addr-delete-btn { width:32px; height:32px; border-radius:50%; background:var(--bg); border:none; cursor:pointer; font-size:.9rem; flex-shrink:0; }
+
+.offer-card {
+  background:linear-gradient(135deg,#1A9E8F,#0d6e63);
+  border-radius:16px; padding:18px; color:#fff; margin-bottom:14px;
+}
+.offer-card-tag { font-size:.68rem; font-weight:800; background:rgba(255,255,255,.2); display:inline-block; padding:3px 10px; border-radius:20px; margin-bottom:8px; }
+.offer-card-title { font-size:1.1rem; font-weight:900; }
+.offer-card-sub { font-size:.82rem; color:rgba(255,255,255,.85); margin-top:4px; }
 </style>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
@@ -1943,7 +2006,184 @@ body {
       <div class="orders-wrap" id="ordersList"></div>
     </div>
 
+    <!-- ✨ TRACK ORDER PAGE (full screen) -->
+    <div id="track-order-page" style="display:none;background:var(--bg);min-height:100vh">
+      <div id="trackOrderHero" style="background:linear-gradient(135deg,#7C2D12,#FC8019);padding:18px 18px 28px;border-radius:0 0 24px 24px;color:#fff">
+        <button onclick="closeTrackOrder()" style="width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.25);border:none;color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-bottom:18px">←</button>
+        <div style="font-size:1.3rem;font-weight:800;margin-bottom:10px">Track Order</div>
+        <div id="trackOrderIdLine" style="font-size:.85rem;color:rgba(255,255,255,.75);margin-bottom:4px">Order #</div>
+        <div id="trackOrderStatusLine" style="font-size:1.7rem;font-weight:900;margin-bottom:4px">—</div>
+        <div id="trackOrderSubLine" style="font-size:.92rem;color:rgba(255,255,255,.85);margin-bottom:18px">—</div>
+        <div id="trackOrderEtaCard" style="display:none;background:rgba(255,255,255,.16);border-radius:18px;padding:18px 20px;align-items:center;justify-content:space-between">
+          <div>
+            <div id="trackOrderEtaNum" style="font-size:2.6rem;font-weight:900;line-height:1">—</div>
+            <div style="font-size:.85rem;color:rgba(255,255,255,.85);margin-top:2px">mins away</div>
+          </div>
+          <div style="font-size:2.6rem">🛵</div>
+        </div>
+      </div>
+
+      <div style="padding:18px 16px">
+        <!-- Step tracker -->
+        <div style="background:#fff;border-radius:18px;padding:22px 16px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:16px">
+          <div class="tracking-steps" id="trackOrderSteps"></div>
+        </div>
+
+        <!-- ✨ "Already arrive in __ min" line -->
+        <div id="trackArriveLine" style="display:none;text-align:center;font-size:.95rem;font-weight:800;color:var(--orange);margin-bottom:12px">
+          Already arrive in <span id="trackArriveMin">—</span> min
+        </div>
+
+        <!-- Delivery partner card -->
+        <div id="trackDeliveryPartnerCard" style="display:none;background:#FFF3E8;border:1.5px solid var(--orange);border-radius:16px;padding:16px;margin-bottom:16px">
+          <div style="font-size:.92rem;font-weight:800;color:var(--orange);margin-bottom:12px">🛵 Your Delivery Partner</div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:52px;height:52px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0">🧑</div>
+            <div style="flex:1">
+              <div id="trackPartnerName" style="font-size:1rem;font-weight:800;color:var(--text)">Delivery Partner</div>
+              <div id="trackPartnerMeta" style="font-size:.8rem;color:var(--muted);margin-top:1px">★ 4.8 · 2,000+ deliveries</div>
+            </div>
+            <a id="trackPartnerCall" href="tel:" style="width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--text);flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.1)">📞</a>
+            <a id="trackPartnerMsg" href="#" style="width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--text);flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.1)">💬</a>
+          </div>
+        </div>
+
+        <!-- Order items -->
+        <div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+          <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:12px">Order Items</div>
+          <div id="trackOrderItemsList"></div>
+          <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:12px;display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:.98rem;font-weight:800;color:var(--text)">Total Paid</div>
+            <div id="trackOrderTotal" style="font-size:1.1rem;font-weight:900;color:var(--text)">₹0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ✨ ACCOUNT PAGE -->
+    <div id="account-page" style="display:none;background:var(--bg);min-height:100vh">
+      <div style="background:linear-gradient(135deg,#7C2D12,#FC8019);padding:20px 18px 26px;color:#fff">
+        <div id="acctNameLine" style="font-size:1.5rem;font-weight:900;margin-bottom:4px">Guest User</div>
+        <div id="acctSubLine" style="font-size:.88rem;color:rgba(255,255,255,.85)">Sign in for a better experience</div>
+      </div>
+
+      <div style="padding:18px 16px">
+        <div style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+
+          <div id="acctLoginRow" class="acct-row" onclick="handleAcctAuthTap()">
+            <span class="acct-icon">🔑</span>
+            <div class="acct-row-label" id="acctLoginLabel">Login / Sign Up</div>
+            <span class="acct-chevron">›</span>
+          </div>
+
+          <div class="acct-row" onclick="showPage('orders')">
+            <span class="acct-icon">📦</span>
+            <div class="acct-row-label">My Orders</div>
+            <span class="acct-chevron">›</span>
+          </div>
+
+          <div class="acct-row" onclick="openFavouritesPage()">
+            <span class="acct-icon">❤️</span>
+            <div class="acct-row-label">Favourites</div>
+            <span class="acct-chevron">›</span>
+          </div>
+
+          <div class="acct-row" onclick="openSavedAddressesPage()">
+            <span class="acct-icon">📍</span>
+            <div class="acct-row-label">Saved Addresses</div>
+            <span class="acct-chevron">›</span>
+          </div>
+
+          <div class="acct-row" onclick="openOffersPage()">
+            <span class="acct-icon">🎟️</span>
+            <div class="acct-row-label">Offers &amp; Coupons</div>
+            <span class="acct-chevron">›</span>
+          </div>
+
+          <div class="acct-row" onclick="openSettingsPage()" style="border-bottom:none">
+            <span class="acct-icon">⚙️</span>
+            <div class="acct-row-label">Settings</div>
+            <span class="acct-chevron">›</span>
+          </div>
+
+        </div>
+
+        <div id="acctLogoutWrap" style="display:none;margin-top:16px">
+          <button onclick="logoutUser()" style="width:100%;padding:13px;background:#fff;border:1.5px solid #E23744;border-radius:12px;color:#E23744;font-weight:800;font-size:.9rem;cursor:pointer;font-family:'Nunito',sans-serif">🚪 Logout</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ✨ FAVOURITES PAGE -->
+    <div id="favourites-page" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:950;overflow-y:auto">
+      <div class="acct-subpage-header">
+        <button onclick="closeAcctSubpage('favourites-page')" class="acct-back-btn">←</button>
+        <div class="acct-subpage-title">❤️ Favourites</div>
+      </div>
+      <div id="favouritesList" style="padding:16px"></div>
+    </div>
+
+    <!-- ✨ SAVED ADDRESSES PAGE -->
+    <div id="addresses-page" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:950;overflow-y:auto">
+      <div class="acct-subpage-header">
+        <button onclick="closeAcctSubpage('addresses-page')" class="acct-back-btn">←</button>
+        <div class="acct-subpage-title">📍 Saved Addresses</div>
+      </div>
+      <div style="padding:16px">
+        <div id="addressesList" style="margin-bottom:14px"></div>
+        <button onclick="showAddAddressForm()" id="addAddrBtn" style="width:100%;padding:13px;background:var(--teal);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:.88rem;cursor:pointer;font-family:'Nunito',sans-serif">+ Add New Address</button>
+        <div id="addAddrForm" style="display:none;margin-top:14px;background:#fff;border-radius:14px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+          <div class="form-group"><label>Label</label>
+            <select id="newAddrLabel" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;font-family:'Nunito',sans-serif;font-size:.9rem">
+              <option>Home</option><option>Work</option><option>Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Full Address</label><textarea id="newAddrText" rows="3" placeholder="House no, Street, Area, Landmark…"></textarea></div>
+          <div style="display:flex;gap:8px">
+            <button onclick="saveNewAddress()" class="btn-primary" style="flex:1">Save Address</button>
+            <button onclick="hideAddAddressForm()" style="flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--sub);font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ✨ OFFERS & COUPONS PAGE -->
+    <div id="offers-page" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:950;overflow-y:auto">
+      <div class="acct-subpage-header">
+        <button onclick="closeAcctSubpage('offers-page')" class="acct-back-btn">←</button>
+        <div class="acct-subpage-title">🎟️ Offers &amp; Coupons</div>
+      </div>
+      <div id="offersContent" style="padding:16px"></div>
+    </div>
+
+    <!-- ✨ SETTINGS PAGE -->
+    <div id="settings-page" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:950;overflow-y:auto">
+      <div class="acct-subpage-header">
+        <button onclick="closeAcctSubpage('settings-page')" class="acct-back-btn">←</button>
+        <div class="acct-subpage-title">⚙️ Settings</div>
+      </div>
+      <div style="padding:16px">
+        <div style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+          <div id="settingsNameRow" class="acct-row" style="border-bottom:1px solid var(--border)">
+            <span class="acct-icon">👤</span>
+            <div class="acct-row-label" id="settingsNameVal">Guest User</div>
+          </div>
+          <div class="acct-row" style="border-bottom:1px solid var(--border)">
+            <span class="acct-icon">📞</span>
+            <div class="acct-row-label" id="settingsPhoneVal">No phone saved</div>
+          </div>
+          <div class="acct-row" style="border-bottom:none" onclick="clearAllLocalData()">
+            <span class="acct-icon">🗑️</span>
+            <div class="acct-row-label" style="color:#E23744">Clear app data</div>
+          </div>
+        </div>
+        <div style="text-align:center;color:var(--muted);font-size:.78rem;margin-top:18px">MM Chats Center · v1.0</div>
+      </div>
+    </div>
+
   </main>
+
+
 
 </div><!-- end .app-wrapper -->
 
@@ -2007,7 +2247,7 @@ body {
       Cart
       <span class="bnav-cart-badge" id="bnavCartBadge">0</span>
     </button>
-    <button class="bnav-item" id="bnavOrders" onclick="showPage('orders')">
+    <button class="bnav-item" id="bnavOrders" onclick="showPage('account')">
       <span class="icon"><svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg></span>
       Profile
     </button>
@@ -2267,7 +2507,10 @@ function setUser(user) {
   document.getElementById('authModal').classList.add('hidden');
   updateUserNav();
 }
-function updateUserNav() { /* header doesn't show user name — handled via profile tab */ }
+function updateUserNav() {
+  /* Refresh account page if it's currently open */
+  if (currentPage === 'account') renderAccountPage();
+}
 function showAuth() {
   if (currentUser && currentUser.name !== 'Guest') { showToast('Logged in as ' + currentUser.name); return; }
   document.getElementById('authModal').classList.remove('hidden');
@@ -2340,6 +2583,8 @@ function renderItem(item) {
          <span class="ph-label">Photo soon</span>
        </div>`;
 
+  const favHtml = `<button class="mi-fav-btn" id="fav-${item.id}" onclick="toggleFavourite(${item.id})" aria-label="Favourite">${isFavourited(item.id) ? '❤️' : '🤍'}</button>`;
+
   /* Add / stepper */
   const btnHtml = qty === 0
     ? `<button class="mi-add-btn" id="btn-${item.id}" onclick="addToCart(${item.id})">ADD +</button>`
@@ -2367,6 +2612,7 @@ function renderItem(item) {
         </div>
       </div>
       <div class="mi-right">
+        ${favHtml}
         ${imgHtml}
         ${btnHtml}
       </div>
@@ -3318,7 +3564,10 @@ function renderOrdersList(all) {
             </div>`).join('')}
         </div>
         ${trackingHTML}
-        <div style="font-size:.7rem;color:var(--muted);margin-top:8px">${new Date(o.placedAt).toLocaleString()}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+          <div style="font-size:.7rem;color:var(--muted)">${new Date(o.placedAt).toLocaleString()}</div>
+          ${o.status !== 'delivered' ? `<button onclick="openTrackOrder('${o.id}')" style="padding:7px 14px;background:var(--orange);border:none;border-radius:8px;color:#fff;font-size:.76rem;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif">Track Order →</button>` : ''}
+        </div>
       </div>`;
   }).join('');
 }
@@ -3983,15 +4232,25 @@ function showPage(page) {
   currentPage = page;
   document.getElementById('menu-page').style.display    = page === 'menu'   ? 'block' : 'none';
   document.getElementById('orders-page').style.display  = page === 'orders' ? 'block' : 'none';
+  document.getElementById('account-page').style.display = page === 'account' ? 'block' : 'none';
   document.getElementById('menuMeta').style.display     = page === 'menu'   ? ''      : 'none';
+  const tp = document.getElementById('track-order-page');
+  if (tp && page !== 'track') tp.style.display = 'none';
+
+  /* Always hide account subpages when navigating to a top-level page */
+  ['favourites-page','addresses-page','offers-page','settings-page'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
 
   /* Bottom nav active */
   ['bnavMenu','bnavCat','bnavCart','bnavOrders'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
-  if (page === 'menu')   document.getElementById('bnavMenu')?.classList.add('active');
-  if (page === 'orders') document.getElementById('bnavOrders')?.classList.add('active');
+  if (page === 'menu')    document.getElementById('bnavMenu')?.classList.add('active');
+  if (page === 'orders')  document.getElementById('bnavOrders')?.classList.add('active');
+  if (page === 'account') document.getElementById('bnavOrders')?.classList.add('active');
 
   if (page === 'orders') {
     renderOrders();
@@ -3999,7 +4258,323 @@ function showPage(page) {
   } else {
     stopLiveTracking();    /* Stop polling when not on orders page */
   }
+
+  if (page === 'account') renderAccountPage();
 }
+
+/* ════════════════════════════════════════════════════════════
+   ✨ ACCOUNT PAGE
+════════════════════════════════════════════════════════════ */
+function renderAccountPage() {
+  const isGuestOrNone = !currentUser || currentUser.name === 'Guest';
+  document.getElementById('acctNameLine').textContent = isGuestOrNone ? 'Guest User' : currentUser.name;
+  document.getElementById('acctSubLine').textContent  = isGuestOrNone ? 'Sign in for a better experience' : (currentUser.phone || currentUser.email || '');
+  document.getElementById('acctLoginLabel').textContent = isGuestOrNone ? 'Login / Sign Up' : 'Account Details';
+  document.getElementById('acctLogoutWrap').style.display = isGuestOrNone ? 'none' : 'block';
+}
+
+function handleAcctAuthTap() {
+  const isGuestOrNone = !currentUser || currentUser.name === 'Guest';
+  if (isGuestOrNone) { showAuth(); }
+  else { openSettingsPage(); }
+}
+
+function logoutUser() {
+  currentUser = null;
+  localStorage.removeItem('mmuser');
+  showToast('Logged out', 'success');
+  renderAccountPage();
+}
+
+function closeAcctSubpage(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+/* ── FAVOURITES ─────────────────────────────────────────── */
+function getFavourites() {
+  return JSON.parse(localStorage.getItem('mmFavs') || '[]');
+}
+function isFavourited(id) {
+  return getFavourites().includes(id);
+}
+function toggleFavourite(id) {
+  let favs = getFavourites();
+  if (favs.includes(id)) { favs = favs.filter(f => f !== id); showToast('Removed from favourites'); }
+  else { favs.push(id); showToast('❤️ Added to favourites!', 'success'); }
+  localStorage.setItem('mmFavs', JSON.stringify(favs));
+  if (document.getElementById('favourites-page').style.display !== 'none') renderFavouritesList();
+  if (typeof renderMenu === 'function') renderMenu();
+}
+function openFavouritesPage() {
+  document.getElementById('favourites-page').style.display = 'block';
+  renderFavouritesList();
+}
+function renderFavouritesList() {
+  const ids = getFavourites();
+  const el  = document.getElementById('favouritesList');
+  if (!ids.length) {
+    el.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;color:var(--muted)">
+        <div style="font-size:3rem;margin-bottom:14px;opacity:.3">🤍</div>
+        <div style="font-weight:700;color:var(--text);margin-bottom:4px">No favourites yet</div>
+        <div style="font-size:.85rem">Tap the heart on any item to save it here</div>
+      </div>`;
+    return;
+  }
+  const items = ids.map(id => MENU_ITEMS.find(i => i.id === id)).filter(Boolean);
+  el.innerHTML = items.map(item => `
+    <div class="fav-item-card">
+      <div class="fav-item-emoji">${CAT_EMOJI[item.cat] || '🍽️'}</div>
+      <div style="flex:1">
+        <div class="fav-item-name">${item.name}</div>
+        <div class="fav-item-price">₹${item.price}</div>
+      </div>
+      <button class="fav-remove-btn" onclick="toggleFavourite(${item.id})">🗑️</button>
+      <button onclick="addToCart(${item.id});showToast('Added to cart! 🛒')" style="padding:8px 14px;background:var(--teal);border:none;border-radius:9px;color:#fff;font-size:.78rem;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap">+ Add</button>
+    </div>`).join('');
+}
+
+/* ── SAVED ADDRESSES ────────────────────────────────────── */
+function getSavedAddresses() {
+  return JSON.parse(localStorage.getItem('mmSavedAddresses') || '[]');
+}
+function openSavedAddressesPage() {
+  document.getElementById('addresses-page').style.display = 'block';
+  hideAddAddressForm();
+  renderAddressesList();
+}
+function renderAddressesList() {
+  const addrs = getSavedAddresses();
+  const el = document.getElementById('addressesList');
+  if (!addrs.length) {
+    el.innerHTML = `
+      <div style="text-align:center;padding:50px 20px;color:var(--muted)">
+        <div style="font-size:3rem;margin-bottom:14px;opacity:.3">📍</div>
+        <div style="font-weight:700;color:var(--text);margin-bottom:4px">No saved addresses</div>
+        <div style="font-size:.85rem">Add your home or work address for faster checkout</div>
+      </div>`;
+    return;
+  }
+  const labelIcons = { Home:'🏠', Work:'💼', Other:'📍' };
+  el.innerHTML = addrs.map((a, i) => `
+    <div class="addr-card">
+      <span class="addr-card-icon">${labelIcons[a.label] || '📍'}</span>
+      <div style="flex:1">
+        <div class="addr-card-label">${a.label}</div>
+        <div class="addr-card-text">${a.text}</div>
+      </div>
+      <button class="addr-delete-btn" onclick="deleteAddress(${i})">🗑️</button>
+    </div>`).join('');
+}
+function showAddAddressForm() {
+  document.getElementById('addAddrForm').style.display = 'block';
+  document.getElementById('addAddrBtn').style.display = 'none';
+}
+function hideAddAddressForm() {
+  document.getElementById('addAddrForm').style.display = 'none';
+  document.getElementById('addAddrBtn').style.display = 'block';
+  document.getElementById('newAddrText').value = '';
+}
+function saveNewAddress() {
+  const label = document.getElementById('newAddrLabel').value;
+  const text  = document.getElementById('newAddrText').value.trim();
+  if (!text || text.length < 8) { showToast('Please enter a full address', 'error'); return; }
+  const addrs = getSavedAddresses();
+  addrs.push({ label, text });
+  localStorage.setItem('mmSavedAddresses', JSON.stringify(addrs));
+  showToast('✅ Address saved!', 'success');
+  hideAddAddressForm();
+  renderAddressesList();
+}
+function deleteAddress(idx) {
+  const addrs = getSavedAddresses();
+  addrs.splice(idx, 1);
+  localStorage.setItem('mmSavedAddresses', JSON.stringify(addrs));
+  renderAddressesList();
+  showToast('Address removed');
+}
+
+/* ── OFFERS & COUPONS ───────────────────────────────────── */
+function openOffersPage() {
+  document.getElementById('offers-page').style.display = 'block';
+  renderOffersContent();
+}
+async function renderOffersContent() {
+  const el = document.getElementById('offersContent');
+  el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">Loading offers…</div>';
+  await loadShopSettings();
+  const d = _shopSettings?.discount;
+  const minOrder = getMinOrder();
+  let html = '';
+  if (d && d.type !== 'none' && d.value) {
+    const desc = d.type === 'percent' ? `${d.value}% OFF` : `₹${d.value} OFF`;
+    html += `
+      <div class="offer-card">
+        <div class="offer-card-tag">🔥 LIVE OFFER</div>
+        <div class="offer-card-title">${desc} on your order</div>
+        <div class="offer-card-sub">${d.minOrder ? `On orders above ₹${d.minOrder}` : 'No minimum order required'} · Applied automatically at checkout</div>
+      </div>`;
+  } else {
+    html += `
+      <div style="text-align:center;padding:50px 20px;color:var(--muted)">
+        <div style="font-size:3rem;margin-bottom:14px;opacity:.3">🎟️</div>
+        <div style="font-weight:700;color:var(--text);margin-bottom:4px">No active offers right now</div>
+        <div style="font-size:.85rem">Check back soon for special deals!</div>
+      </div>`;
+  }
+  html += `
+    <div class="offer-card" style="background:linear-gradient(135deg,#FC8019,#E23744)">
+      <div class="offer-card-tag">💰 ALWAYS ON</div>
+      <div class="offer-card-title">Save ₹30 vs Zomato &amp; Swiggy</div>
+      <div class="offer-card-sub">Order direct and skip the platform markup, every time</div>
+    </div>`;
+  if (minOrder > 0) {
+    html += `<div style="text-align:center;color:var(--muted);font-size:.8rem;margin-top:10px">Minimum order: ₹${minOrder}</div>`;
+  }
+  el.innerHTML = html;
+}
+
+/* ── SETTINGS ────────────────────────────────────────────── */
+function openSettingsPage() {
+  document.getElementById('settings-page').style.display = 'block';
+  const isGuestOrNone = !currentUser || currentUser.name === 'Guest';
+  document.getElementById('settingsNameVal').textContent  = isGuestOrNone ? 'Guest User' : currentUser.name;
+  document.getElementById('settingsPhoneVal').textContent = (currentUser && currentUser.phone) ? currentUser.phone : 'No phone saved';
+}
+function clearAllLocalData() {
+  if (!confirm('This will clear your cart, favourites, saved addresses and login. Continue?')) return;
+  localStorage.removeItem('mmcart');
+  localStorage.removeItem('mmFavs');
+  localStorage.removeItem('mmSavedAddresses');
+  localStorage.removeItem('mmuser');
+  showToast('App data cleared. Reloading…', 'success');
+  setTimeout(() => location.reload(), 1200);
+}
+
+
+
+/* ════════════════════════════════════════════════════════════
+   ✨ TRACK ORDER PAGE — full screen tracking with ETA + partner
+════════════════════════════════════════════════════════════ */
+let _trackOrderId = null;
+let _trackOrderInterval = null;
+
+const TRACK_STATUS_INFO = {
+  pending:          { headline: 'Order Placed!',     sub: 'Waiting for the shop to accept your order', step: 0 },
+  preparing:        { headline: 'Being Prepared!',   sub: 'Your chaat is being freshly made',          step: 1 },
+  out_for_delivery: { headline: 'Out for Delivery!', sub: 'is on the way to you',                       step: 2 },
+  delivered:        { headline: 'Delivered!',        sub: 'Enjoy your meal! 🎉',                        step: 3 },
+};
+
+/** Generate a stable-looking delivery partner from the order id (no backend field needed) */
+function getDeliveryPartnerFor(order) {
+  if (order.deliveryPartner) return order.deliveryPartner;
+  const names = ['Raju Kumar','Manjunath','Suresh','Praveen','Naveen Gowda'];
+  const idx = Math.abs((order.id || '').split('').reduce((s,c)=>s+c.charCodeAt(0),0)) % names.length;
+  return {
+    name: names[idx],
+    phone: '8618752739',
+    rating: 4.8,
+    deliveries: 1500 + (idx * 311),
+  };
+}
+
+function openTrackOrder(orderId) {
+  _trackOrderId = orderId;
+  showPage('track');
+  document.getElementById('track-order-page').style.display = 'block';
+  document.getElementById('menu-page').style.display = 'none';
+  document.getElementById('orders-page').style.display = 'none';
+  renderTrackOrder();
+  if (_trackOrderInterval) clearInterval(_trackOrderInterval);
+  _trackOrderInterval = setInterval(renderTrackOrder, 4000);
+}
+
+function closeTrackOrder() {
+  document.getElementById('track-order-page').style.display = 'none';
+  if (_trackOrderInterval) { clearInterval(_trackOrderInterval); _trackOrderInterval = null; }
+  showPage('orders');
+}
+
+function renderTrackOrder() {
+  if (!_trackOrderId) return;
+  const all = JSON.parse(localStorage.getItem('mmorders') || '[]');
+  const o = all.find(x => x.id === _trackOrderId);
+  if (!o) return;
+
+  const info = TRACK_STATUS_INFO[o.status] || TRACK_STATUS_INFO.pending;
+
+  /* Hero */
+  document.getElementById('trackOrderIdLine').textContent = 'Order #' + o.id;
+  document.getElementById('trackOrderStatusLine').textContent = info.headline;
+  const partner = getDeliveryPartnerFor(o);
+  document.getElementById('trackOrderSubLine').textContent =
+    o.status === 'out_for_delivery' ? (partner.name + ' ' + info.sub) : info.sub;
+
+  /* ETA card — only meaningful while preparing or out for delivery */
+  const etaCard = document.getElementById('trackOrderEtaCard');
+  const arriveLine = document.getElementById('trackArriveLine');
+  let etaMins = null;
+  if (o.status === 'preparing' && o.acceptedAt && o.prepMins) {
+    const endAt = new Date(o.acceptedAt).getTime() + o.prepMins * 60000;
+    etaMins = Math.max(0, Math.round((endAt - Date.now()) / 60000));
+  } else if (o.status === 'out_for_delivery') {
+    /* Simulate a steadily-decreasing ETA seeded by order id + elapsed time since it went out */
+    const seed = Math.abs((o.id||'').split('').reduce((s,c)=>s+c.charCodeAt(0),0)) % 10;
+    const baseEta = 12 + seed;
+    const elapsedMin = o.outForDeliveryAt ? Math.floor((Date.now() - new Date(o.outForDeliveryAt).getTime())/60000) : 0;
+    etaMins = Math.max(1, baseEta - elapsedMin);
+  }
+
+  if (etaMins !== null) {
+    etaCard.style.display = 'flex';
+    document.getElementById('trackOrderEtaNum').textContent = etaMins;
+    arriveLine.style.display = 'block';
+    document.getElementById('trackArriveMin').textContent = etaMins;
+  } else {
+    etaCard.style.display = 'none';
+    arriveLine.style.display = 'none';
+  }
+
+  /* Step tracker */
+  const steps = ['Placed','Preparing','On Way','Delivered'];
+  const stepIcons = ['✓','👨‍🍳','🛵','🎉'];
+  document.getElementById('trackOrderSteps').innerHTML = `
+    <div class="tracking-progress" style="width:${[0,33,66,100][info.step]}%"></div>
+    ${steps.map((lbl,i) => `
+      <div class="t-step ${i < info.step ? 'done' : i === info.step ? 'active' : ''}">
+        <div class="t-dot">${stepIcons[i]}</div>
+        <div class="t-lbl">${lbl}</div>
+      </div>`).join('')}`;
+
+  /* Delivery partner card — only while out for delivery */
+  const partnerCard = document.getElementById('trackDeliveryPartnerCard');
+  if (o.status === 'out_for_delivery') {
+    partnerCard.style.display = 'block';
+    document.getElementById('trackPartnerName').textContent = partner.name;
+    document.getElementById('trackPartnerMeta').textContent = `★ ${partner.rating} · ${partner.deliveries.toLocaleString()} deliveries`;
+    document.getElementById('trackPartnerCall').href = 'tel:' + partner.phone;
+    document.getElementById('trackPartnerMsg').href = 'sms:' + partner.phone;
+  } else {
+    partnerCard.style.display = 'none';
+  }
+
+  /* Order items */
+  document.getElementById('trackOrderItemsList').innerHTML = (o.items||[]).map(i => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:.88rem;color:var(--text)">🍽️ ${i.name} ×${i.qty}</div>
+      <div style="font-size:.88rem;font-weight:700;color:var(--text)">₹${i.price * i.qty}</div>
+    </div>`).join('');
+  document.getElementById('trackOrderTotal').textContent = '₹' + o.total;
+
+  /* Stop polling once delivered */
+  if (o.status === 'delivered' && _trackOrderInterval) {
+    clearInterval(_trackOrderInterval);
+    _trackOrderInterval = null;
+  }
+}
+
+
 
 /* ── 12. TOAST ────────────────────────────────────────────── */
 function showToast(msg, type = 'success') {
