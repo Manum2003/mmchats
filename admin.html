@@ -4073,9 +4073,30 @@ function saveEditItem(id) {
     localStorage.setItem('mmItemOverrides', JSON.stringify(overrides));
   }
 
+  /* Push price/name overrides to Firebase so the CUSTOMER site updates too
+     (images stay local — too heavy to sync this way) */
+  pushItemOverrides();
+
   document.getElementById('editItemModal')?.remove();
   renderMenuMgmt();
-  showAdminToast('✅ "' + name + '" updated!');
+  showAdminToast('✅ "' + name + '" updated — customer site will show new price!');
+}
+
+/* Sync all item overrides (minus images) to Firebase */
+async function pushItemOverrides() {
+  if (!FIREBASE_URL) return;
+  try {
+    const overrides = JSON.parse(localStorage.getItem('mmItemOverrides') || '{}');
+    const slim = {};
+    for (const id in overrides) {
+      const { imageData, ...rest } = overrides[id];  /* strip heavy images */
+      slim[id] = rest;
+    }
+    await fetch(`${FIREBASE_URL}/mmchats/itemOverrides.json`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(slim),
+    });
+  } catch(e) {}
 }
 function addItem(){
   const name=document.getElementById('newName').value.trim();
@@ -4373,6 +4394,9 @@ function showDashboard() {
   }, 15000);
 }
 document.addEventListener('DOMContentLoaded', () => {
+  /* Sync any previously-saved price edits to Firebase so customer site stays current */
+  pushItemOverrides();
+
   /* Check saved login session */
   const savedLogin = localStorage.getItem('mmAdminLoggedIn');
   const savedUser  = localStorage.getItem('mmAdminUser');
