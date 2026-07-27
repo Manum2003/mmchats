@@ -2141,6 +2141,48 @@ const USE_JSONBIN  = !!JSONBIN_URL && !USE_FIREBASE;
 async function cloudPush(newOrder) {
   /* Push only the new order — don't overwrite other orders */
   if (USE_FIREBASE && newOrder) {
+    /* ── INSTANT OWNER ALERT (works even if admin panel is closed) ──
+       The customer's phone sends the Telegram message at order time,
+       so the owner gets a push notification on their phone instantly,
+       no matter what app they're in. */
+    try {
+      /* WhatsApp via CallMeBot — same key as admin panel.
+         Paste the SAME CallMeBot API key here after registering. */
+      const WA_PHONE  = '918618752739';
+      const WA_APIKEY = '';   /* ← paste CallMeBot key here (same as admin.html) */
+      const TG_BOT  = '8666570687:AAGc48MH9lQY8Qs3snFx69W-qJyB2uhsXUk';
+      const TG_CHAT = '6494089306';
+
+      const items = (newOrder.items || []).map(i => `${i.name} ×${i.qty}`).join('\n  ');
+      const cutlery = newOrder.cutlery ? '🥄 Send Cutlery' : '🚫 No Cutlery';
+      const note = newOrder.instructions ? '\n📝 ' + newOrder.instructions : '';
+      const msg =
+        `🔔 <b>New Order!</b> MM Chats\n━━━━━━━━━━━━━━\n` +
+        `📋 Order: <b>#${newOrder.id}</b>\n` +
+        `👤 <b>${newOrder.customer?.name || 'Customer'}</b>  📞 ${newOrder.customer?.phone || ''}\n` +
+        `━━━━━━━━━━━━━━\n🛍 Items:\n  ${items}\n` +
+        `💰 Total: <b>₹${newOrder.total || 0}</b>` +
+        (newOrder.deliveryFee ? ` (incl. 🛵 ₹${newOrder.deliveryFee})` : '') + `\n` +
+        `📍 ${newOrder.customer?.addr || ''}\n` +
+        `${cutlery}${note}\n━━━━━━━━━━━━━━\n⚡ Accept in admin panel now!`;
+
+      if (WA_APIKEY && WA_PHONE) {
+        /* WHATSAPP: fire-and-forget (no-cors means we can't read the reply) */
+        const plain = msg.replace(/<[^>]+>/g, '');
+        fetch('https://api.callmebot.com/whatsapp.php?phone=' + WA_PHONE +
+          '&text=' + encodeURIComponent(plain) + '&apikey=' + WA_APIKEY, { mode: 'no-cors' });
+        newOrder.tgNotified = true;  /* admin panel won't re-send */
+      } else {
+        /* TELEGRAM (until WhatsApp key is configured) */
+        const tgResp = await fetch(`https://api.telegram.org/bot${TG_BOT}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: TG_CHAT, text: msg, parse_mode: 'HTML' }),
+        });
+        if (tgResp.ok) newOrder.tgNotified = true;  /* admin panel won't re-send */
+      }
+    } catch(e) { /* send failed — admin panel will alert as fallback */ }
+
     try {
       await fetch(`${FIREBASE_URL}/mmchats/orders/${newOrder.id}.json`, {
         method:  'PUT',
@@ -2269,9 +2311,55 @@ function setUser(user) {
   updateUserNav();
 }
 function updateUserNav() { /* header doesn't show user name — handled via profile tab */ }
+
 function showAuth() {
-  if (currentUser && currentUser.name !== 'Guest') { showToast('Logged in as ' + currentUser.name); return; }
+  if (currentUser && currentUser.name !== 'Guest') {
+    showProfileSheet();
+    return;
+  }
   document.getElementById('authModal').classList.remove('hidden');
+}
+
+/* ── PROFILE SHEET with LOGOUT ──────────────────────────── */
+function showProfileSheet() {
+  const old = document.getElementById('profileSheet');
+  if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'profileSheet';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9600;display:flex;align-items:flex-end;justify-content:center';
+  m.innerHTML = `
+    <div style="background:#fff;border-radius:22px 22px 0 0;width:100%;max-width:480px;padding:22px 20px 34px;font-family:'Nunito',sans-serif">
+      <div style="width:40px;height:4px;background:#E5E5E5;border-radius:2px;margin:0 auto 18px"></div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+        <div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#1A9E8F,#0d8a7a);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;font-weight:900">
+          ${(currentUser.name||'U').charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <div style="font-size:1.05rem;font-weight:900;color:#111">${currentUser.name||''}</div>
+          <div style="font-size:.8rem;color:#888">${currentUser.phone||currentUser.email||''}</div>
+        </div>
+      </div>
+      <button onclick="logoutUser()"
+        style="width:100%;background:#FEE2E2;border:1.5px solid #FCA5A5;border-radius:14px;padding:14px;color:#DC2626;font-weight:800;font-size:.95rem;cursor:pointer;font-family:'Nunito',sans-serif">
+        🚪 Logout
+      </button>
+      <button onclick="document.getElementById('profileSheet').remove()"
+        style="width:100%;background:none;border:none;padding:12px;color:#999;font-weight:700;font-size:.85rem;cursor:pointer;margin-top:6px;font-family:'Nunito',sans-serif">
+        Close
+      </button>
+    </div>`;
+  m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+  document.body.appendChild(m);
+}
+
+function logoutUser() {
+  localStorage.removeItem('mmuser');
+  currentUser = null;
+  const sheet = document.getElementById('profileSheet');
+  if (sheet) sheet.remove();
+  showToast('Logged out successfully');
+  /* Show login screen again */
+  setTimeout(() => document.getElementById('authModal').classList.remove('hidden'), 600);
 }
 
 /* ── 6. MENU RENDER ───────────────────────────────────────── */
@@ -2327,7 +2415,8 @@ function imgError(imgEl, cat) {
 
 function renderItem(item) {
   const qty      = (cart.find(c => c.id === item.id) || {}).qty || 0;
-  const imgSrc = item.imgKey ? IMG_MAP[item.imgKey] : null;
+  /* Admin-uploaded image takes priority; then built-in photo; then emoji */
+  const imgSrc = item.imageData || (item.imgKey ? IMG_MAP[item.imgKey] : null);
   const hasImage = Boolean(imgSrc);
 
   /* Image area */
@@ -3240,10 +3329,10 @@ function renderOrdersList(all) {
 
   const myIds = JSON.parse(localStorage.getItem('mmMyOrderIds') || '[]');
 
-  /* Match by EITHER phone OR saved order ID — exclude cancelled */
+  /* Match by EITHER phone OR saved order ID — include cancelled so
+     the customer sees the refund message */
   const myOrders = all.filter(o => {
     if (!o || !o.id) return false;
-    if (o.status === 'cancelled') return false;
     if (myPhone && o.customer?.phone?.trim() === myPhone) return true;
     if (myIds.includes(o.id)) return true;
     return false;
@@ -3278,6 +3367,36 @@ function renderOrdersList(all) {
   ];
 
   el.innerHTML = myOrders.map(o => {
+    /* ── CANCELLED: show refund card instead of progress steps ── */
+    if (o.status === 'cancelled') {
+      return `
+      <div class="order-card" style="border:1.5px solid #FECACA">
+        <div class="order-card-hd">
+          <div>
+            <div class="order-name">${(o.items||[]).map(i=>i.name).join(', ').slice(0,40)}…</div>
+            <div class="order-meta">#${o.id} · ₹${o.total} · ${o.paymentMethod||''}</div>
+          </div>
+          <span class="order-status-badge" style="background:#FEE2E2;color:#DC2626">Cancelled ❌</span>
+        </div>
+        <div style="margin-top:10px;background:linear-gradient(135deg,#FEF2F2,#FFF1F2);border:1.5px solid #FCA5A5;border-radius:14px;padding:14px">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <span style="font-size:1.4rem">💰</span>
+            <div>
+              <div style="font-size:.9rem;font-weight:800;color:#B91C1C">Order Cancelled — Refund Initiated</div>
+              <div style="font-size:.78rem;color:#7F1D1D;margin-top:4px;line-height:1.5">
+                Your payment of <b>₹${o.total||0}</b> will be refunded to your original
+                payment method within <b>3-5 business days</b>.
+              </div>
+              <div style="font-size:.72rem;color:#B91C1C;margin-top:6px">
+                Questions? WhatsApp us: <a href="https://wa.me/918618752739" style="color:#B91C1C;font-weight:800">8618752739</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:8px">${new Date(o.placedAt).toLocaleString()}</div>
+      </div>`;
+    }
+
     const s  = SM[o.status] || SM.pending;
     const pw = [0, 33, 66, 100][s.step] + '%';
 
@@ -3392,15 +3511,24 @@ async function loadOutOfStock() {
 }
 function isItemOutOfStock(id) { return !!_outOfStockItems[id]; }
 
-/* ── ITEM OVERRIDES (price/name changes from admin panel) ── */
-async function loadItemOverrides() {
+/* ── FULL MENU SYNC (everything changed in admin panel) ──
+   price, MRP, name, description, images, new items, deletions */
+async function loadItemOverrides() { return loadMenuSync(); }
+
+async function loadMenuSync() {
   if (!FIREBASE_URL) return;
   try {
-    const resp = await fetch(`${FIREBASE_URL}/mmchats/itemOverrides.json`);
+    const resp = await fetch(`${FIREBASE_URL}/mmchats/menuSync.json`);
     if (!resp.ok) return;
-    const overrides = await resp.json();
-    if (!overrides) return;
+    const sync = await resp.json();
+    if (!sync) return;
+
     let changed = false;
+    const overrides = sync.overrides || {};
+    const deleted   = sync.deleted   || {};
+    const custom    = sync.customItems || [];
+
+    /* 1. Apply edits to built-in items */
     MENU_ITEMS.forEach(item => {
       const ov = overrides[item.id];
       if (ov) {
@@ -3409,11 +3537,29 @@ async function loadItemOverrides() {
         if (ov.name)                item.name  = ov.name;
         if (ov.desc)                item.desc  = ov.desc;
         if (ov.popular !== undefined) item.popular = ov.popular;
+        if (ov.imageData)           item.imageData = ov.imageData;
         changed = true;
       }
     });
+
+    /* 2. Remove deleted items */
+    for (let i = MENU_ITEMS.length - 1; i >= 0; i--) {
+      if (deleted[MENU_ITEMS[i].id]) { MENU_ITEMS.splice(i, 1); changed = true; }
+    }
+
+    /* 3. Append admin-added items (avoid duplicates on re-run) */
+    custom.forEach(c => {
+      if (!c || !c.id || MENU_ITEMS.some(m => m.id === c.id)) return;
+      MENU_ITEMS.push({
+        id: c.id, name: c.name || 'New Item', cat: c.cat || 'belpuri',
+        desc: c.desc || '', price: c.price || 0, mrp: c.mrp || c.price || 0,
+        popular: !!c.popular, imageData: c.imageData || null,
+      });
+      changed = true;
+    });
+
     if (changed) {
-      renderMenu();          /* re-render with new prices */
+      renderMenu();
       updateCartBadge();
     }
   } catch(e) {}
