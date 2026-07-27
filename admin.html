@@ -1847,12 +1847,16 @@ try {
 
 function getUsers()       { return JSON.parse(localStorage.getItem('mmusers')||'[]'); }
 function getCustomItems() { return JSON.parse(localStorage.getItem('mmCustomItems')||'[]'); }
+function getDeletedItems() { return JSON.parse(localStorage.getItem('mmDeletedItems')||'{}'); }
 function getAllItems() {
   const overrides = JSON.parse(localStorage.getItem('mmItemOverrides') || '{}');
-  const base = MENU_BASE.map(item => {
-    const ov = overrides[item.id];
-    return ov ? { ...item, ...ov } : item;
-  });
+  const deleted   = getDeletedItems();
+  const base = MENU_BASE
+    .filter(item => !deleted[item.id])
+    .map(item => {
+      const ov = overrides[item.id];
+      return ov ? { ...item, ...ov } : item;
+    });
   return [...base, ...getCustomItems()];
 }
 
@@ -1955,8 +1959,36 @@ let bannerTimer=null;
 const TELEGRAM_TOKEN   = '8666570687:AAGc48MH9lQY8Qs3snFx69W-qJyB2uhsXUk';
 const TELEGRAM_CHAT_ID = '6494089306';  /* Manu M */
 
-/** Send Telegram notification — instant, free, no DLT needed */
+/* ══ WHATSAPP NOTIFICATIONS (CallMeBot — free) ══════════════════
+   ONE-TIME SETUP (2 minutes):
+   1. Save this number in your phone contacts: +34 644 51 95 23
+   2. Send it this WhatsApp message exactly:
+      "I allow callmebot to send me messages"
+   3. It replies with your personal API key (a number like 123456)
+   4. Paste that key below as WHATSAPP_APIKEY
+   Until the key is set, alerts automatically use Telegram instead.
+══════════════════════════════════════════════════════════════ */
+const WHATSAPP_PHONE  = '918618752739';   /* YOUR number that receives alerts */
+const WHATSAPP_APIKEY = '';               /* ← paste CallMeBot key here */
+
+/** Send owner alert — WhatsApp first (if configured), Telegram as fallback */
 async function sendWhatsAppAuto(message) {
+  /* ── WHATSAPP via CallMeBot ── */
+  if (WHATSAPP_APIKEY && WHATSAPP_PHONE) {
+    try {
+      const plain = message.replace(/<[^>]+>/g, '');  /* strip HTML tags */
+      await fetch('https://api.callmebot.com/whatsapp.php?phone=' + WHATSAPP_PHONE +
+        '&text=' + encodeURIComponent(plain) + '&apikey=' + WHATSAPP_APIKEY,
+        { mode: 'no-cors' });
+      console.log('[WhatsApp] sent via CallMeBot');
+      showAdminToast('📱 WhatsApp alert sent!');
+      return;
+    } catch(e) {
+      console.warn('[WhatsApp] failed, falling back to Telegram', e);
+    }
+  }
+
+  /* ── TELEGRAM fallback ── */
   if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) {
     if (!TELEGRAM_CHAT_ID) showAdminToast('⚠️ Set TELEGRAM_CHAT_ID in admin.html');
     return;
@@ -2085,21 +2117,25 @@ function notifyNewOrder(order) {
   const cutlery = order?.cutlery ? '🥄 Send Cutlery' : '🚫 No Cutlery';
   const note    = order?.instructions ? '\n📝 ' + order.instructions : '';
 
-  /* ── 1. TELEGRAM — Instant automatic alert ── */
-  const tgMsg =
-    `🔔 <b>New Order!</b> MM Chats\n` +
-    `━━━━━━━━━━━━━━\n` +
-    `📋 Order: <b>#${orderId}</b>\n` +
-    `👤 <b>${name}</b>  📞 ${phone}\n` +
-    `━━━━━━━━━━━━━━\n` +
-    `🛍 Items:\n  ${items}\n` +
-    `💰 Total: <b>₹${total}</b>\n` +
-    `📍 ${addr}\n` +
-    `${cutlery}${note}\n` +
-    `━━━━━━━━━━━━━━\n` +
-    `⚡ Accept in admin panel now!`;
+  /* ── 1. TELEGRAM — Instant automatic alert ──
+     Skip if the customer's phone already sent it at order time
+     (tgNotified flag) — admin send is now just a fallback. */
+  if (!order?.tgNotified) {
+    const tgMsg =
+      `🔔 <b>New Order!</b> MM Chats\n` +
+      `━━━━━━━━━━━━━━\n` +
+      `📋 Order: <b>#${orderId}</b>\n` +
+      `👤 <b>${name}</b>  📞 ${phone}\n` +
+      `━━━━━━━━━━━━━━\n` +
+      `🛍 Items:\n  ${items}\n` +
+      `💰 Total: <b>₹${total}</b>\n` +
+      `📍 ${addr}\n` +
+      `${cutlery}${note}\n` +
+      `━━━━━━━━━━━━━━\n` +
+      `⚡ Accept in admin panel now!`;
 
-  sendWhatsAppAuto(tgMsg);
+    sendWhatsAppAuto(tgMsg);
+  }
 
   /* ── 2. Browser Push Notification (lock screen) ── */
   if ('Notification' in window && Notification.permission === 'granted') {
@@ -2355,12 +2391,39 @@ function rejectOrder() {
     o.status = 'cancelled';
     o.cancelledAt = new Date().toISOString();
     saveOrders(orders, o.id);
+    notifyCustomerWhatsApp(o, 'cancelled');
   }
 
   document.getElementById('newOrderPopup').classList.remove('show');
-  showAdminToast('❌ Order rejected');
+  showAdminToast('❌ Order rejected — WhatsApp refund message opened');
   updatePendingBadge();
   if (currentSection === 'dashboard') renderDashboard();
+}
+
+/* ── WHATSAPP CUSTOMER NOTIFICATIONS ─────────────────────────
+   Opens WhatsApp with a ready-typed message to the customer.
+   (Auto-send needs a paid WhatsApp Business API — this opens
+   the chat with the message pre-filled, you just tap Send.) */
+function notifyCustomerWhatsApp(order, type) {
+  const phone = ((order.customer && order.customer.phone) || '').replace(/\D/g, '').slice(-10);
+  if (!phone) return;
+  let msg = '';
+  if (type === 'cancelled') {
+    msg = `Hi ${(order.customer && order.customer.name) || ''}! 🙏\n\n` +
+      `Your MM Chats order #${order.id} has been *cancelled*.\n\n` +
+      `💰 Your payment of *₹${order.total || 0}* will be *refunded* to your original payment method within 3-5 business days.\n\n` +
+      `Sorry for the inconvenience — hope to serve you again soon!\n— MM Chats Center, Kengeri`;
+  } else if (type === 'accepted') {
+    msg = `Hi ${(order.customer && order.customer.name) || ''}! 🎉\n\n` +
+      `Your MM Chats order #${order.id} is *confirmed* and being prepared! 👨‍🍳\n` +
+      `Total: ₹${order.total || 0}\n\n— MM Chats Center, Kengeri`;
+  } else if (type === 'out_for_delivery') {
+    msg = `Hi ${(order.customer && order.customer.name) || ''}! 🛵\n\n` +
+      `Your MM Chats order #${order.id} is *on the way*!\n` +
+      (order.trackingLink ? `📍 Track live: ${order.trackingLink}\n` : '') +
+      `\n— MM Chats Center, Kengeri`;
+  }
+  if (msg) window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 let _soundLoopInterval = null;
@@ -2541,6 +2604,13 @@ function updateStatus(status,orderId){
     /* Accumulate permanent delivered count */
     const prevD = parseInt(localStorage.getItem('mmTotalDelivered') || '0');
     localStorage.setItem('mmTotalDelivered', prevD + 1);
+  }
+  if(status==='cancelled') {
+    o.cancelledAt = new Date().toISOString();
+    notifyCustomerWhatsApp(o, 'cancelled');
+  }
+  if(status==='out_for_delivery') {
+    notifyCustomerWhatsApp(o, 'out_for_delivery');
   }
   /* ── AUTO BOOK BORZO when you mark order as Preparing ───────
      The moment you tap "Preparing" → Borzo bike auto-booked
@@ -3934,9 +4004,20 @@ function renderMenuMgmt(){
 }
 
 function deleteItem(id){
-  if(!confirm('Delete this item?'))return;
-  localStorage.setItem('mmCustomItems',JSON.stringify(getCustomItems().filter(i=>i.id!==id)));
+  if(!confirm('Delete this item? It will disappear from the customer website too.'))return;
+  const custom = getCustomItems();
+  if (custom.some(i => i.id === id)) {
+    /* Custom item — remove from list */
+    localStorage.setItem('mmCustomItems', JSON.stringify(custom.filter(i => i.id !== id)));
+  } else {
+    /* Built-in item — mark as deleted */
+    const deleted = getDeletedItems();
+    deleted[id] = true;
+    localStorage.setItem('mmDeletedItems', JSON.stringify(deleted));
+  }
+  pushMenuSync();
   renderMenuMgmt();
+  showAdminToast('🗑️ Item deleted — customer site updated');
 }
 
 function openEditModal(id) {
@@ -4073,31 +4154,69 @@ function saveEditItem(id) {
     localStorage.setItem('mmItemOverrides', JSON.stringify(overrides));
   }
 
-  /* Push price/name overrides to Firebase so the CUSTOMER site updates too
-     (images stay local — too heavy to sync this way) */
-  pushItemOverrides();
+  /* Push FULL menu state to Firebase so the CUSTOMER site updates too:
+     prices, names, descriptions, images (compressed), new items, deletions */
+  pushMenuSync();
 
   document.getElementById('editItemModal')?.remove();
   renderMenuMgmt();
-  showAdminToast('✅ "' + name + '" updated — customer site will show new price!');
+  showAdminToast('✅ "' + name + '" updated — customer site will show changes!');
 }
 
-/* Sync all item overrides (minus images) to Firebase */
-async function pushItemOverrides() {
+/* Compress a base64 image to max 400px JPEG so customer pages load fast */
+function _compressImg(dataUrl) {
+  return new Promise(resolve => {
+    try {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const maxW = 400;
+          const scale = Math.min(1, maxW / img.width);
+          const c = document.createElement('canvas');
+          c.width  = Math.round(img.width * scale);
+          c.height = Math.round(img.height * scale);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          resolve(c.toDataURL('image/jpeg', 0.7));
+        } catch(e) { resolve(dataUrl); }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    } catch(e) { resolve(dataUrl); }
+  });
+}
+
+/* Sync the complete menu (overrides + custom items + deletions, WITH images) */
+async function pushMenuSync() {
   if (!FIREBASE_URL) return;
   try {
     const overrides = JSON.parse(localStorage.getItem('mmItemOverrides') || '{}');
-    const slim = {};
+    const custom    = getCustomItems();
+    const deleted   = getDeletedItems();
+
+    /* Compress any images before uploading */
+    const slimOverrides = {};
     for (const id in overrides) {
-      const { imageData, ...rest } = overrides[id];  /* strip heavy images */
-      slim[id] = rest;
+      const o = { ...overrides[id] };
+      if (o.imageData) o.imageData = await _compressImg(o.imageData);
+      slimOverrides[id] = o;
     }
-    await fetch(`${FIREBASE_URL}/mmchats/itemOverrides.json`, {
+    const slimCustom = [];
+    for (const c of custom) {
+      const o = { ...c };
+      if (o.imageData) o.imageData = await _compressImg(o.imageData);
+      slimCustom.push(o);
+    }
+
+    await fetch(`${FIREBASE_URL}/mmchats/menuSync.json`, {
       method: 'PUT', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(slim),
+      body: JSON.stringify({ overrides: slimOverrides, customItems: slimCustom, deleted,
+                             updatedAt: new Date().toISOString() }),
     });
   } catch(e) {}
 }
+
+/* Backwards-compat alias (called on page load) */
+function pushItemOverrides() { pushMenuSync(); }
 function addItem(){
   const name=document.getElementById('newName').value.trim();
   const desc=document.getElementById('newDesc').value.trim();
@@ -4105,9 +4224,11 @@ function addItem(){
   const custom=getCustomItems();
   custom.push({id:Date.now(),name,desc,cat:document.getElementById('newCat').value,price:+document.getElementById('newPrice').value,mrp:+document.getElementById('newMrp').value,popular:document.getElementById('newPop').value==='true'});
   localStorage.setItem('mmCustomItems',JSON.stringify(custom));
-  showAdminToast('✅ "'+name+'" added!');
+  pushMenuSync();
+  showAdminToast('✅ "'+name+'" added — customer site updated!');
   document.getElementById('newName').value='';
   document.getElementById('newDesc').value='';
+  renderMenuMgmt();
 }
 
 function renderUsers(){
@@ -4842,6 +4963,19 @@ function initShopStatus() {
   <div id="kotContent"></div>
 </div>
 
+<!-- ═══ PWA INSTALL BANNER (bottom slide-up, dark theme) ═══ -->
+<div id="pwaInstallOverlayAdmin" style="position:fixed;left:12px;right:12px;bottom:80px;z-index:9800;pointer-events:none">
+  <div id="pwaInstallPopupAdmin" style="background:#1C1C27;border:1px solid #2A2A3D;border-radius:18px;padding:14px 14px 14px 12px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 36px rgba(0,0,0,.5);transform:translateY(120%);opacity:0;transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .35s ease">
+    <div style="width:46px;height:46px;border-radius:13px;flex-shrink:0;background:linear-gradient(135deg,#1A9E8F33,#0d6e6333);display:flex;align-items:center;justify-content:center;font-size:1.6rem">🍱</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:.88rem;font-weight:800;color:#fff;letter-spacing:-.2px;font-family:'Space Grotesk',sans-serif">Install MM Admin App</div>
+      <div style="font-size:.72rem;color:#6B6B8A;margin-top:2px;font-family:'Space Grotesk',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Faster · Full screen · One tap to manage</div>
+    </div>
+    <button onclick="installPWAAdmin()" style="background:linear-gradient(135deg,#1A9E8F,#0d8a7a);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:.82rem;font-weight:800;cursor:pointer;font-family:'Space Grotesk',sans-serif;flex-shrink:0;white-space:nowrap;box-shadow:0 4px 14px rgba(26,158,143,.35)">Install</button>
+    <button onclick="dismissPWAAdmin()" style="width:26px;height:26px;border-radius:50%;flex-shrink:0;background:#2A2A3D;border:none;color:#9CA3AF;font-size:.78rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+  </div>
+</div>
+
 <!-- Install Admin App — bottom LEFT -->
 <button id="installFloatAdmin" onclick="installPWAAdmin()" title="Install Admin App"
   style="position:fixed;bottom:86px;left:14px;width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#1A9E8F,#0d6e63);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(26,158,143,.5);z-index:9700">
@@ -4851,15 +4985,44 @@ function initShopStatus() {
 </button>
 
 <script>
-/* ── PWA INSTALL — Admin Panel ───────────────────────────── */
+/* ── PWA INSTALL — Admin Panel (matches customer panel behavior) ── */
 let _deferredPromptAdmin = null;
+
+function showPWABannerAdmin() {
+  const o = document.getElementById('pwaInstallOverlayAdmin');
+  const p = document.getElementById('pwaInstallPopupAdmin');
+  if (!o || !p) return;
+  o.style.pointerEvents = 'auto';
+  p.style.transform = 'translateY(0)'; p.style.opacity = '1';
+}
+function hidePWABannerAdmin() {
+  const o = document.getElementById('pwaInstallOverlayAdmin');
+  const p = document.getElementById('pwaInstallPopupAdmin');
+  if (!o || !p) return;
+  o.style.pointerEvents = 'none';
+  p.style.transform = 'translateY(120%)'; p.style.opacity = '0';
+}
+function dismissPWAAdmin() {
+  hidePWABannerAdmin();
+  localStorage.setItem('mm_admin_pwa_dismissed', '1');
+}
 
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _deferredPromptAdmin = e;
+  /* Auto-show banner after load — but wait until login screen is cleared */
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (isStandalone || localStorage.getItem('mm_admin_pwa_dismissed')) return;
+  const tryShow = () => {
+    const auth = document.getElementById('adminAuth');
+    const loginOpen = auth && auth.style.display !== 'none';
+    if (loginOpen) { setTimeout(tryShow, 800); } else { showPWABannerAdmin(); }
+  };
+  setTimeout(tryShow, 3000);
 });
 
 function installPWAAdmin() {
+  hidePWABannerAdmin();
   if (_deferredPromptAdmin) {
     _deferredPromptAdmin.prompt();
     _deferredPromptAdmin.userChoice.then(choice => {
