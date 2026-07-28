@@ -1724,6 +1724,20 @@ body {
                     style="resize:none"></textarea>
         </div>
 
+        <!-- Coupon code -->
+        <div class="om-field">
+          <label class="om-label" for="couponInput">🎟️ Coupon Code <span style="color:#999;font-weight:400">(optional)</span></label>
+          <div style="display:flex;gap:8px">
+            <input class="om-input" id="couponInput" type="text" placeholder="e.g. MMNEW20"
+                   style="flex:1;text-transform:uppercase" autocomplete="off">
+            <button type="button" id="couponApplyBtn" onclick="applyCoupon()"
+              style="padding:0 18px;background:linear-gradient(135deg,#1A9E8F,#0d8a7a);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:.82rem;cursor:pointer;font-family:'Nunito',sans-serif">
+              Apply
+            </button>
+          </div>
+          <div id="couponMsg" style="display:none;margin-top:8px;font-size:.78rem;font-weight:700"></div>
+        </div>
+
         <!-- UPI only badge -->
         <div class="om-upi-badge">
           <span class="upi-em">📱</span>
@@ -2162,7 +2176,8 @@ async function cloudPush(newOrder) {
         `👤 <b>${newOrder.customer?.name || 'Customer'}</b>  📞 ${newOrder.customer?.phone || ''}\n` +
         `━━━━━━━━━━━━━━\n🛍 Items:\n  ${items}\n` +
         `💰 Total: <b>₹${newOrder.total || 0}</b>` +
-        (newOrder.deliveryFee ? ` (incl. 🛵 ₹${newOrder.deliveryFee})` : '') + `\n` +
+        (newOrder.deliveryFee ? ` (incl. 🛵 ₹${newOrder.deliveryFee})` : '') +
+        (newOrder.coupon ? `\n🎟️ Coupon ${newOrder.coupon}: −₹${newOrder.couponDiscount}` : '') + `\n` +
         `📍 ${newOrder.customer?.addr || ''}\n` +
         `${cutlery}${note}\n━━━━━━━━━━━━━━\n⚡ Accept in admin panel now!`;
 
@@ -3147,7 +3162,19 @@ function goToPaymentStep() {
   const mrpTot     = cart.reduce((s,i) => s + i.mrp   * i.qty, 0);
   const savings    = mrpTot - total;
   const deliveryFee = getDeliveryFee();
-  const grandTotal = total + deliveryFee;
+
+  /* Re-validate coupon against current cart (cart may have changed) */
+  if (appliedCoupon) {
+    const c = COUPONS[appliedCoupon];
+    if (!c || total < c.minOrder) {
+      appliedCoupon = null; couponDiscount = 0;
+      _setCouponMsg('⚠️ Coupon removed — minimum order ₹' + (c ? c.minOrder : '') + ' not met', '#DC2626');
+    } else {
+      couponDiscount = Math.round(total * c.pct / 100);
+    }
+  }
+
+  const grandTotal = total - couponDiscount + deliveryFee;
   currentDeliveryFee = deliveryFee;
 
   /* Update amount displays */
@@ -3191,6 +3218,65 @@ function goToPaymentStep() {
   document.getElementById('orderStep2').style.display = 'flex';
 }
 
+/* ── COUPON SYSTEM ────────────────────────────────────────────
+   MMNEW20: 20% off · minimum order ₹201 · NEW customers only
+   (new = phone number has never placed an order before) */
+const COUPONS = {
+  'MMNEW20': { pct: 20, minOrder: 201, newCustomerOnly: true },
+};
+let appliedCoupon  = null;
+let couponDiscount = 0;
+
+function _setCouponMsg(text, color) {
+  const el = document.getElementById('couponMsg');
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.color = color;
+  el.textContent = text;
+}
+
+async function applyCoupon() {
+  const input = document.getElementById('couponInput');
+  const btn   = document.getElementById('couponApplyBtn');
+  const code  = (input?.value || '').trim().toUpperCase();
+  if (!code) { _setCouponMsg('Enter a coupon code', '#DC2626'); return; }
+
+  const c = COUPONS[code];
+  if (!c) { appliedCoupon = null; couponDiscount = 0; _setCouponMsg('❌ Invalid coupon code', '#DC2626'); return; }
+
+  const itemTotal = cart.reduce((s,i) => s + i.price * i.qty, 0);
+  if (itemTotal < c.minOrder) {
+    appliedCoupon = null; couponDiscount = 0;
+    _setCouponMsg(`❌ Minimum order ₹${c.minOrder} needed — add ₹${c.minOrder - itemTotal} more`, '#DC2626');
+    return;
+  }
+
+  if (c.newCustomerOnly) {
+    const phone = document.getElementById('custPhone')?.value.trim();
+    if (!phone) { _setCouponMsg('📞 Enter your phone number above first', '#D97706'); return; }
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+    try {
+      const resp = await fetch(`${FIREBASE_URL}/mmchats/orders.json`);
+      const data = resp.ok ? await resp.json() : null;
+      const past = data ? Object.values(data).filter(o =>
+        o && o.customer && (o.customer.phone||'').replace(/\D/g,'').slice(-10) === phone.replace(/\D/g,'').slice(-10)
+        && o.status !== 'cancelled') : [];
+      if (past.length > 0) {
+        appliedCoupon = null; couponDiscount = 0;
+        _setCouponMsg('❌ This code is only for first orders — welcome back though! 😊', '#DC2626');
+        if (btn) { btn.disabled = false; btn.textContent = 'Apply'; }
+        return;
+      }
+    } catch(e) { /* network issue — allow it, be generous */ }
+    if (btn) { btn.disabled = false; btn.textContent = 'Apply'; }
+  }
+
+  appliedCoupon  = code;
+  couponDiscount = Math.round(itemTotal * c.pct / 100);
+  _setCouponMsg(`✅ ${code} applied — ${c.pct}% off = −₹${couponDiscount} 🎉`, '#16A34A');
+  showToast(`🎟️ Coupon applied! You save ₹${couponDiscount}`, 'success');
+}
+
 /* Manual confirm — called automatically after Razorpay success, or from QR/COD flows */
 function manualConfirmPayment() {
   const btn = document.getElementById('confirmOrderBtn');
@@ -3218,7 +3304,7 @@ async function placeOrder() {
   const itemTotal    = cart.reduce((s,i) => s + i.price * i.qty, 0);
   const DELIVERY_FEE = getDeliveryFee();
   const discountAmt  = getDiscount(itemTotal);
-  const total        = itemTotal - discountAmt + DELIVERY_FEE;
+  const total        = itemTotal - discountAmt - couponDiscount + DELIVERY_FEE;
   const order   = {
     id: orderId,
     customer: { name, phone, addr },
@@ -3228,12 +3314,18 @@ async function placeOrder() {
     itemTotal,
     deliveryFee: DELIVERY_FEE,
     deliveryKm: userDistanceKm !== null ? +userDistanceKm.toFixed(1) : null,
+    coupon: appliedCoupon || null,
+    couponDiscount: couponDiscount || 0,
     total,
     status: 'pending',
     placedAt: new Date().toISOString(),
     paymentMethod: 'UPI',  /* Always UPI — COD removed */
     gps
   };
+  /* Reset coupon so it can't be reused in the same session */
+  appliedCoupon = null; couponDiscount = 0;
+  const cpInput = document.getElementById('couponInput'); if (cpInput) cpInput.value = '';
+  const cpMsg = document.getElementById('couponMsg'); if (cpMsg) cpMsg.style.display = 'none';
   orders.unshift(order);
   localStorage.setItem('mmorders', JSON.stringify(orders));
 
@@ -3700,7 +3792,7 @@ const RAZORPAY_KEY_ID = 'rzp_live_T4aR7RV6t1WLpW';
 function payWithRazorpay() {
   const itemTotal = cart.reduce((s,i) => s + i.price*i.qty, 0);
   const deliveryFee = getDeliveryFee();
-  const total = itemTotal + deliveryFee;
+  const total = itemTotal - couponDiscount + deliveryFee;
   currentDeliveryFee = deliveryFee;
   if (!total) { showToast('Cart is empty'); return; }
 
@@ -4550,6 +4642,16 @@ function startShopStatusPolling() {
       </div>
       <div class="hero-emoji">🛵</div>
     </div>
+  </div>
+</div>
+
+<!-- ═══ NEW CUSTOMER COUPON BANNER ═══════════════════════════ -->
+<div id="couponPromoBar" onclick="showToast('Use code MMNEW20 at checkout! Min order ₹201')"
+  style="margin:10px 14px;background:linear-gradient(135deg,#1A9E8F,#0d8a7a);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:0 4px 14px rgba(26,158,143,.3)">
+  <span style="font-size:1.5rem">🎟️</span>
+  <div style="flex:1">
+    <div style="color:#fff;font-weight:800;font-size:.88rem;font-family:'Nunito',sans-serif">New here? Get 20% OFF your first order!</div>
+    <div style="color:rgba(255,255,255,.85);font-size:.72rem;font-family:'Nunito',sans-serif">Use code <b style="background:rgba(255,255,255,.2);padding:1px 7px;border-radius:5px;letter-spacing:.5px">MMNEW20</b> · Min order ₹201</div>
   </div>
 </div>
 
