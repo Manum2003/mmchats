@@ -2129,6 +2129,7 @@ function notifyNewOrder(order) {
       `━━━━━━━━━━━━━━\n` +
       `🛍 Items:\n  ${items}\n` +
       `💰 Total: <b>₹${total}</b>\n` +
+      (order?.coupon ? `🎟️ Coupon ${order.coupon}: −₹${order.couponDiscount||0}\n` : '') +
       `📍 ${addr}\n` +
       `${cutlery}${note}\n` +
       `━━━━━━━━━━━━━━\n` +
@@ -3958,6 +3959,7 @@ function renderHistory(){
       <div class="order-meta-row">
         <span>📞 ${o.customer.phone}</span>
         <span>💰 ₹${o.total}</span>
+        ${o.coupon ? `<span style="color:#48C479">🎟️ ${o.coupon} −₹${o.couponDiscount||0}</span>` : ''}
         <span>💳 ${o.paymentMethod||'COD'}</span>
         <span>✅ ${time}</span>
       </div>
